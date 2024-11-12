@@ -49,11 +49,13 @@ class MainActivity : AppCompatActivity(), OnNextClickListener {
         viewPager.adapter = adapter
         viewPager.visibility = View.VISIBLE
         bottomNavigationView.visibility = View.GONE
+        findViewById<View>(R.id.fragment_container).visibility = View.GONE // Fragment container başlangıçta gizli
     }
 
     private fun showMainContent() {
         viewPager.visibility = View.GONE
         bottomNavigationView.visibility = View.VISIBLE
+        findViewById<View>(R.id.fragment_container).visibility = View.VISIBLE // Fragment container görünür yap
         loadFragment(HomeFragment())
     }
 
