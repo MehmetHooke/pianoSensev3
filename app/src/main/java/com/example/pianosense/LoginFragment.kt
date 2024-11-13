@@ -10,11 +10,17 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 
 class LoginFragment : Fragment() {
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -32,6 +38,21 @@ class LoginFragment : Fragment() {
         val emailEditText = view.findViewById<EditText>(R.id.emailEditText)
         val passwordEditText = view.findViewById<EditText>(R.id.passwordEditText)
         val loginButton = view.findViewById<Button>(R.id.loginButton)
+        val googleSignInButton = view.findViewById<Button>(R.id.googleSignInButton) // Google ile giriş butonu
+
+
+        // Google Sign-In seçeneklerini yapılandırın
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id)) // Google Developer Console'dan alınan Client ID
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
+
+        // Google Sign-In butonuna tıklama işlemi
+        googleSignInButton.setOnClickListener {
+            signInWithGoogle()
+        }
+
 
         // Kayıt ekranına geçiş
         registerTextView.setOnClickListener {
@@ -53,6 +74,44 @@ class LoginFragment : Fragment() {
             }
         }
     }
+    // Google Sign-In işlemi
+    private fun signInWithGoogle() {
+        val signInIntent = googleSignInClient.signInIntent
+        startActivityForResult(signInIntent, RC_SIGN_IN)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == RC_SIGN_IN) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            handleGoogleSignInResult(task)
+        }
+    }
+
+    private fun handleGoogleSignInResult(task: Task<*>?) {
+        try {
+            val account = task?.result as com.google.android.gms.auth.api.signin.GoogleSignInAccount
+            firebaseAuthWithGoogle(account.idToken!!)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Google Sign-In failed.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun firebaseAuthWithGoogle(idToken: String) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener(requireActivity()) { task ->
+                if (task.isSuccessful) {
+                    Toast.makeText(requireContext(), "Login successful with Google!", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(requireContext(), MainActivity::class.java)
+                    intent.putExtra("SKIP_ONBOARDING", true)
+                    startActivity(intent)
+                    requireActivity().finish()
+                } else {
+                    Toast.makeText(requireContext(), "Google Sign-In failed.", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
 
     // Kullanıcı girişi
     private fun loginUser(email: String, password: String) {
@@ -73,5 +132,8 @@ class LoginFragment : Fragment() {
                     Toast.makeText(requireContext(), "Login failed. Please try again.", Toast.LENGTH_SHORT).show()
                 }
             }
+    }
+    companion object {
+        private const val RC_SIGN_IN = 9001
     }
 }

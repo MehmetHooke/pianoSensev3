@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.pianosense.HomeFragment"
+        android:label="Home">
+        <action
+            android:id="@+id/action_homeFragment_to_playFragment"
+            app:destination="@id/playFragment"
+            app:argType="com.example.pianosense.Music" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/playFragment"
+        android:name="com.example.pianosense.PlayFragment"
+        android:label="Play">
+        <argument
+            android:name="musicId"
+            app:argType="integer" />
+        <argument
+            android:name="musicTitle"
+            app:argType="string" />
+        <argument
+            android:name="musicComposer"
+            app:argType="string" />
+    </fragment>
+
+    <!-- Diğer fragment'leri burada tanımlayabilirsiniz -->
+</navigation>

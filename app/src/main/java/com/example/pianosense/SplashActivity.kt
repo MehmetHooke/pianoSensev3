@@ -18,7 +18,8 @@ class SplashActivity : AppCompatActivity() {
         val logoImageView: ImageView = findViewById(R.id.logoImageView)
         Glide.with(this).asGif().load(R.drawable.sense).into(logoImageView)
 
-        FirebaseAuth.getInstance().signOut()
+        //uygulamanın her açılışında çıkış yapmasını engelle
+        //FirebaseAuth.getInstance().signOut()
 
         Handler(Looper.getMainLooper()).postDelayed({
             val currentUser = FirebaseAuth.getInstance().currentUser
@@ -32,6 +33,6 @@ class SplashActivity : AppCompatActivity() {
                 startActivity(Intent(this, MainActivity::class.java))
             }
             finish()
-        }, 4000)
+        }, 4500)
     }
 }

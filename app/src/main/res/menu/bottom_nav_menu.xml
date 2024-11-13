@@ -3,13 +3,18 @@
 
     <item
         android:id="@+id/navigation_home"
-        android:icon="@drawable/ic_play"
+        android:icon="@drawable/home_outline"
     android:title="Home" />
 
     <item
         android:id="@+id/navigation_search"
         android:icon="@drawable/ic_search"
     android:title="Search" />
+
+    <item
+        android:id="@+id/navigation_play"
+        android:icon="@drawable/ic_play"
+        android:title="Play" />
 
     <item
         android:id="@+id/navigation_saved"

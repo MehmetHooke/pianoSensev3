@@ -2,6 +2,7 @@ package com.example.pianosense
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -35,13 +36,30 @@ class MainActivity : AppCompatActivity(), OnNextClickListener {
 
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.navigation_home -> loadFragment(HomeFragment())
-                R.id.navigation_search -> loadFragment(SearchFragment())
-                R.id.navigation_saved -> loadFragment(SavedFragment())
-                R.id.navigation_settings -> loadFragment(SettingsFragment())
+                R.id.navigation_home -> {
+                    loadFragment(HomeFragment())
+                    true
+                }
+                R.id.navigation_search -> {
+                    loadFragment(SearchFragment())
+                    true
+                }
+                R.id.navigation_play -> {
+                    loadFragment(PlayFragment())
+                    true
+                }
+                R.id.navigation_saved -> {
+                    loadFragment(SavedFragment())
+                    true
+                }
+                R.id.navigation_settings -> {
+                    loadFragment(SettingsFragment())
+                    true
+                }
+                else -> false
             }
-            true
         }
+
     }
 
     private fun setupOnboarding() {
@@ -75,4 +93,17 @@ class MainActivity : AppCompatActivity(), OnNextClickListener {
             .replace(R.id.fragment_container, fragment)
             .commit()
     }
+
+    // HomeFragment'ten PlayFragment'e geçişi sağlamak için bu metodu ekledik
+    fun navigateToPlayFragment(id: Int, title: String, composer: String) {
+        Log.d("MainActivity", "Navigating to PlayFragment with title: $title, composer: $composer")
+        val playFragment = PlayFragment.newInstance(id, title, composer)
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, playFragment)
+            .addToBackStack(null)
+            .commit()
+
+
+    }
+
 }

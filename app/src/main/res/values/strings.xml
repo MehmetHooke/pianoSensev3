@@ -19,4 +19,13 @@
     <string name="play">Play</string>
     <string name="saved">Saved</string>
     <string name="settings">Settings</string>
+    <string name="passwords_account"><![CDATA[Passwords & Account]]></string>
+    <string name="start_practice">Start Practice</string>
+    <string name="play_music">Play Music</string>
+    <string name="save">Save</string>
+    <string name="evgeny_grinko">Evgeny Grinko</string>
+    <string name="valse_title">Valse</string>
+    <string name="music_sheet_image">Valse Music Bu Evgny Grinko</string>
+    <string name="scrollable_image">scrollable image</string>
+    <string name="listen_music">Listen Music</string>
 </resources>

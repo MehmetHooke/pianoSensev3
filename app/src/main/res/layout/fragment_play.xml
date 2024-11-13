@@ -1,12 +1,99 @@
-<?xml version="1.0" encoding="utf-8"?>
-
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
     <TextView
+        android:id="@+id/listenMusicTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/black"
-        android:text="Play Screen"
-        android:layout_centerInParent="true" />
-</RelativeLayout>
+        android:text="@string/listen_music"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_gravity="center"/>
+
+    <!-- Yatay kaydırılabilir alan -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="16dp"
+        android:contentDescription="@string/scrollable_image">
+
+        <ImageView
+            android:id="@+id/musicSheetImage"
+            android:layout_width="wrap_content"
+            android:layout_height="300dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/vals_evgeny_grinko"
+            android:contentDescription="@string/music_sheet_image" />
+    </HorizontalScrollView>
+
+    <TextView
+        android:id="@+id/musicTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/valse_title"
+        android:textSize="18sp"
+        android:layout_marginTop="8dp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/musicComposer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/evgeny_grinko"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"/>
+
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="100dp"
+        android:paddingLeft="15dp"
+
+        android:layout_height="50dp"
+        android:text="@string/save"
+        android:background="@drawable/rounded_button1"
+        android:drawableStart="@drawable/heart"
+        android:textAllCaps="false"
+        android:backgroundTint="@color/btncolor"
+        android:textColor="@android:color/white"
+        android:layout_gravity="end" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/playMusicButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/play_music"
+            android:drawablePadding="-25dp"
+            android:drawableStart="@drawable/ic_play_white"
+            android:paddingLeft="15dp"
+            android:textAllCaps="false"
+            android:background="@drawable/rounded_button1"
+            android:backgroundTint="@color/btncolor"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/startPracticeButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/start_practice"
+            android:textAllCaps="false"
+            android:drawableStart="@drawable/mic"
+            android:paddingLeft="15dp"
+
+            android:background="@drawable/rounded_button1"
+            android:backgroundTint="@color/btncolor"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+</LinearLayout>
