@@ -72,6 +72,25 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
 
+    //js analizi için kütüphaneler
+    //implementation(files("libs\\TarsosDSPKit-release.aar"))
+
+
+
+
+    //implementation (files("libs/TarsosDSP.jar"))
+    implementation ("com.google.code.gson:gson:2.8.9")
+
+    implementation ("com.arthenica:mobile-ffmpeg-full:4.4.LTS")
+
+    //implementation (libs.tarsosdsp.v24android)
+
+    //implementation ("be.tarsos.dsp:core:2.5")
+    //implementation ("be.tarsos.dsp:jvm:2.5")
+
+    //implementation("be.tarsos.dsp:TarsosDSP:2.5")
+    //implementation ("com.github.axet:TarsosDSP:2.4-1")
+
     implementation ("androidx.viewpager2:viewpager2:1.1.0")
     implementation ("androidx.fragment:fragment-ktx:1.8.5")
     implementation ("com.google.android.material:material:1.12.0")  // Sürümü güncelleyebilirsiniz
@@ -83,6 +102,11 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.firebase.auth.ktx)
+    implementation(libs.androidx.recyclerview)
+    implementation(files("libs\\TarsosDSP-Android-2.4.jar"))
+
+
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

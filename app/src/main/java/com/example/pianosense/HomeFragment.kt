@@ -1,21 +1,31 @@
 package com.example.pianosense
 
+import MusicViewModel
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class HomeFragment : Fragment() {
 
+    // MusicViewModel kullanımı
+    private val musicViewModel: MusicViewModel by activityViewModels()
+
     private lateinit var musicRecyclerView: RecyclerView
     private lateinit var musicAdapter: MusicAdapter
+
+    // Müzik listesi
     private val musicList = listOf(
         Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar),
-        Music(2, "Moonlight Sonata", "Beethoven", R.drawable.ic_arrow_right),
+        Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar),
         Music(3, "Für Elise", "Beethoven", R.drawable.avatar)
     )
 
@@ -29,23 +39,15 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
+        // RecyclerView ve Adapter kurulumu
         musicRecyclerView = view.findViewById(R.id.musicRecyclerView)
         musicAdapter = MusicAdapter(requireContext(), musicList) { selectedMusic ->
-            openPlayPage(selectedMusic)
+            // Müzik seçildiğinde ViewModel'e bilgiyi ekle ve PlayFragment'e geçiş yap
+            musicViewModel.setSelectedMusic(selectedMusic)
+            (activity as? MainActivity)?.navigateToPlayFragment()
         }
         musicRecyclerView.adapter = musicAdapter
         musicRecyclerView.layoutManager = LinearLayoutManager(requireContext())
     }
-
-    private fun openPlayPage(music: Music) {
-        Log.d("HomeFragment", "Opening Play Page for music: ${music.title}, composer: ${music.composer}")
-        (activity as? MainActivity)?.navigateToPlayFragment(
-            music.id,         // Int
-            music.title,      // String
-            music.composer    // String
-        )
-    }
-
-
-
 }

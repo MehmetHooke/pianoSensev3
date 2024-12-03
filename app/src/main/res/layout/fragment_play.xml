@@ -1,5 +1,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -15,6 +17,7 @@
         android:layout_gravity="center"/>
 
     <!-- Yatay kaydırılabilir alan -->
+
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="300dp"
@@ -25,9 +28,9 @@
             android:id="@+id/musicSheetImage"
             android:layout_width="wrap_content"
             android:layout_height="300dp"
+            android:contentDescription="@string/music_sheet_image"
             android:scaleType="fitCenter"
-            android:src="@drawable/vals_evgeny_grinko"
-            android:contentDescription="@string/music_sheet_image" />
+            android:src="@drawable/vals_evgeny_grinko" />
     </HorizontalScrollView>
 
     <TextView
@@ -61,39 +64,93 @@
         android:textColor="@android:color/white"
         android:layout_gravity="end" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="370dp"
+        android:layout_height="200dp"
+
+
+        android:layout_gravity="center"
         android:layout_marginTop="16dp">
+
 
         <Button
             android:id="@+id/playMusicButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="16dp"
             android:layout_weight="1"
-            android:text="@string/play_music"
-            android:drawablePadding="-25dp"
-            android:drawableStart="@drawable/ic_play_white"
-            android:paddingLeft="15dp"
-            android:textAllCaps="false"
             android:background="@drawable/rounded_button1"
             android:backgroundTint="@color/btncolor"
-            android:textColor="@android:color/white" />
+            android:drawableStart="@drawable/ic_play_white"
+            android:drawablePadding="-15dp"
+            android:paddingLeft="15dp"
+            android:text="@string/play_music"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.114" />
 
         <Button
-            android:id="@+id/startPracticeButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:id="@+id/startRecordButton"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="@string/start_practice"
-            android:textAllCaps="false"
-            android:drawableStart="@drawable/mic"
-            android:paddingLeft="15dp"
-
             android:background="@drawable/rounded_button1"
             android:backgroundTint="@color/btncolor"
+            android:drawableStart="@drawable/mic"
+
+            android:paddingLeft="15dp"
+            android:text="@string/start_practice"
+            android:textAllCaps="false"
             android:textColor="@android:color/white"
-            android:layout_marginStart="8dp"/>
-    </LinearLayout>
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/playMusicButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.114" />
+
+        <Button
+            android:id="@+id/resultsButton"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:background="@drawable/rounded_button1"
+            android:backgroundTint="@color/btncolor"
+            android:drawableStart="@drawable/ic_search_white"
+            android:drawablePadding="-15dp"
+            android:paddingStart="10dp"
+
+            android:paddingLeft="5dp"
+            android:text="Check my results"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.076"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.7" />
+
+        <Button
+            android:id="@+id/listenRecord"
+            android:layout_width="160dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/rounded_button1"
+            android:drawableStart="@drawable/ic_play_white"
+            android:drawablePadding="-15dp"
+            android:paddingStart="10dp"
+            android:text="Listen Record"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/resultsButton"
+            app:layout_constraintTop_toBottomOf="@+id/startRecordButton"
+            app:layout_constraintVertical_bias="0.045" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </LinearLayout>

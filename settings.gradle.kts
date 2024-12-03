@@ -8,6 +8,11 @@ pluginManagement {
             }
         }
         mavenCentral()
+        maven {
+            name = "TarsosDSP repository"
+            url = uri("https://mvn.0110.be/releases") // `uri` ile doğru tür sağlanır
+        }
+        jcenter()
         gradlePluginPortal()
     }
 }

@@ -1,5 +1,6 @@
 package com.example.pianosense
 
+import MusicViewModel
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -8,13 +9,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.viewpager2.widget.ViewPager2
-import com.google.firebase.auth.FirebaseAuth
+import androidx.activity.viewModels
 
 class MainActivity : AppCompatActivity(), OnNextClickListener {
+
+
 
     private lateinit var viewPager: ViewPager2
     private lateinit var bottomNavigationView: BottomNavigationView
     private var isOnboardingComplete = false
+
+    //yeni
+    private val musicViewModel: MusicViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,6 +52,12 @@ class MainActivity : AppCompatActivity(), OnNextClickListener {
                 }
                 R.id.navigation_play -> {
                     loadFragment(PlayFragment())
+                    /*navigateToPlayFragment(
+                        id = 1,
+                        title = "Valse",
+                        composer = "Evgeny Grinko",
+                        imageResId = R.drawable.vals_evgeny_grinko
+                    )*/
                     true
                 }
                 R.id.navigation_saved -> {
@@ -95,15 +107,28 @@ class MainActivity : AppCompatActivity(), OnNextClickListener {
     }
 
     // HomeFragment'ten PlayFragment'e geçişi sağlamak için bu metodu ekledik
-    fun navigateToPlayFragment(id: Int, title: String, composer: String) {
+    /*
+    fun navigateToPlayFragment(id: Int, title: String, composer: String, imageResId: Int) {
         Log.d("MainActivity", "Navigating to PlayFragment with title: $title, composer: $composer")
-        val playFragment = PlayFragment.newInstance(id, title, composer)
+        val playFragment = PlayFragment.newInstance(id, title, composer, imageResId)
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, playFragment)
             .addToBackStack(null)
             .commit()
 
 
+
+    }*/
+
+    //yeninavigate fonk
+    fun navigateToPlayFragment() {
+        val playFragment = PlayFragment()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, playFragment)
+            .addToBackStack(null)
+            .commit()
+
+        bottomNavigationView.selectedItemId = R.id.navigation_play
     }
 
 }
