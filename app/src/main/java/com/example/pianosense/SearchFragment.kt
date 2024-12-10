@@ -39,9 +39,9 @@ class SearchFragment : Fragment() {
 
         // Müzik listesini tanımlıyoruz
         musicList = listOf(
-            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar),
-            Music(2, "Beauty", "Jon Cossack", R.drawable.avatar),
-            Music(3, "Paragon Sky", "Glenn Natale", R.drawable.avatar)
+            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "path/to/original/music/file.wav"),
+            Music(2, "Beauty", "Jon Cossack", R.drawable.avatar, "path/to/original/music/file.wav"),
+            Music(3, "Paragon Sky", "Glenn Natale", R.drawable.avatar, "path/to/original/music/file.wav")
         )
         filteredList = musicList.toMutableList()
 

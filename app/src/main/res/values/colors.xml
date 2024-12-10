@@ -9,6 +9,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="btncolor">#6C63FF</color>
 
+    <color name="red">#E91E63</color>
+    <color name="green">#4CAF50</color>
+
 
     //nav menu
     <color name="nav_background">#F5EFFA</color> <!-- Arka plan rengi -->

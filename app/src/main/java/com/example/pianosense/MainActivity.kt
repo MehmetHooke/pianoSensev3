@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.viewpager2.widget.ViewPager2
 import androidx.activity.viewModels
+import be.tarsos.dsp.io.android.AndroidFFMPEGLocator
 
 class MainActivity : AppCompatActivity(), OnNextClickListener {
 
@@ -25,6 +26,8 @@ class MainActivity : AppCompatActivity(), OnNextClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        //AndroidFFMPEGLocator(this)
 
         viewPager = findViewById(R.id.viewPager)
         bottomNavigationView = findViewById(R.id.bottom_navigation)

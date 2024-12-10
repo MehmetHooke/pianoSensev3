@@ -1,145 +1,142 @@
-<RelativeLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:fillViewport="true"> <!-- İçeriği genişliğe ve yüksekliğe göre doldurur -->
 
-    <ImageView
-        android:id="@+id/senseLoginlogo"
-        android:layout_width="361dp"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="9dp"
-        android:layout_marginTop="41dp"
-        android:layout_marginEnd="17dp"
-        android:background="@drawable/ic_adventure" />
-
-    <TextView
-        android:id="@+id/welcomeText"
-
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="49dp"
-        android:layout_marginTop="200dp"
-        android:layout_marginEnd="47dp"
-
-        android:text="Welcome back"
-        android:textColor="@color/black"
-
-        android:textAlignment="center"
-        android:textFontWeight="@android:integer/config_longAnimTime"
-        android:textSize="38sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/subtitleText"
-        android:layout_width="290dp"
-        android:textSize="15sp"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/welcomeText"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="47dp"
-        android:layout_marginTop="0dp"
-        android:layout_marginEnd="49dp"
-        android:text="sign in to access your account"
-        android:textAlignment="center" />
-
-    <EditText
-        android:id="@+id/emailEditText"
-        android:drawableEnd="@drawable/mail"
-        android:paddingEnd="10dp"
-        android:inputType="textEmailAddress"
-        android:fontFamily="sans-serif"
-        android:background="@drawable/rounded_login"
-        android:layout_width="match_parent"
-        android:paddingStart="10dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/welcomeText"
-        android:layout_marginTop="80dp"
-        android:hint="Enter your email" />
-
-    <EditText
-        android:id="@+id/passwordEditText"
-        android:fontFamily="sans-serif"
-        android:drawableEnd="@drawable/lock"
-        android:paddingEnd="10dp"
-        android:background="@drawable/rounded_login"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/password"
-        android:paddingStart="10dp"
-        android:inputType="textPassword"
-        android:layout_below="@id/emailEditText"
-        android:layout_marginTop="16dp"/>
+        android:padding="24dp">
 
-    <Button
-        android:id="@+id/loginButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Next"
-        android:textSize="16dp"
-        android:paddingRight="200dp"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/btncolor"
-        android:drawablePadding="8dp"
-        android:textStyle="bold"
-        android:background="@drawable/rounded_button"
-        android:drawableEnd="@drawable/ic_arrow_right_only"
-        android:layout_below="@id/passwordEditText"
-        android:layout_marginTop="24dp"
-        android:padding="10dp"
-        />
+        <ImageView
+            android:id="@+id/senseLoginlogo"
+            android:layout_width="361dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="9dp"
+            android:layout_marginTop="41dp"
+            android:layout_marginEnd="17dp"
+            android:background="@drawable/ic_adventure" />
 
+        <TextView
+            android:id="@+id/welcomeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="49dp"
+            android:layout_marginTop="200dp"
+            android:layout_marginEnd="47dp"
+            android:text="Welcome back"
+            android:textColor="@color/black"
+            android:textAlignment="center"
+            android:textFontWeight="@android:integer/config_longAnimTime"
+            android:textSize="38sp"
+            android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/googleSignInButton"
-        android:layout_width="106dp"
-        android:layout_height="52dp"
-        android:paddingStart="12dp"
-        android:layout_below="@+id/loginButton"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="85dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="85dp"
-        android:background="@drawable/rounded_button"
-        android:drawableLeft="@drawable/ic_google"
-        android:text="Sign in with Google"
-        android:textAllCaps="false"
-        android:textColor="@color/white" />
+        <TextView
+            android:id="@+id/subtitleText"
+            android:layout_width="290dp"
+            android:textSize="15sp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/welcomeText"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="47dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginEnd="49dp"
+            android:text="sign in to access your account"
+            android:textAlignment="center" />
 
-    <TextView
-        android:id="@+id/rememberText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/googleSignInButton"
+        <EditText
+            android:id="@+id/emailEditText"
+            android:drawableEnd="@drawable/mail"
+            android:paddingEnd="10dp"
+            android:inputType="textEmailAddress"
+            android:fontFamily="sans-serif"
+            android:background="@drawable/rounded_login"
+            android:layout_width="match_parent"
+            android:paddingStart="10dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/welcomeText"
+            android:layout_marginTop="80dp"
+            android:hint="Enter your email" />
 
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="85dp"
+        <EditText
+            android:id="@+id/passwordEditText"
+            android:fontFamily="sans-serif"
+            android:drawableEnd="@drawable/lock"
+            android:paddingEnd="10dp"
+            android:background="@drawable/rounded_login"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/password"
+            android:paddingStart="10dp"
+            android:inputType="textPassword"
+            android:layout_below="@id/emailEditText"
+            android:layout_marginTop="16dp" />
 
-        android:layout_marginTop="48dp"
-        android:layout_marginBottom="35dp"
-        android:text="New Member?" />
+        <Button
+            android:id="@+id/loginButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Next"
+            android:textSize="16dp"
+            android:paddingRight="200dp"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/btncolor"
+            android:drawablePadding="8dp"
+            android:textStyle="bold"
+            android:background="@drawable/rounded_button"
+            android:drawableEnd="@drawable/ic_arrow_right_only"
+            android:layout_below="@id/passwordEditText"
+            android:layout_marginTop="24dp"
+            android:padding="10dp" />
 
-    <TextView
-        android:id="@+id/registerText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/googleSignInButton"
+        <Button
+            android:id="@+id/googleSignInButton"
+            android:layout_width="106dp"
+            android:layout_height="52dp"
+            android:paddingStart="12dp"
+            android:layout_below="@+id/loginButton"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="85dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="85dp"
+            android:background="@drawable/rounded_button"
+            android:drawableLeft="@drawable/ic_google"
+            android:text="Sign in with Google"
+            android:textAllCaps="false"
+            android:textColor="@color/white" />
 
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="45dp"
+        <TextView
+            android:id="@+id/rememberText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/googleSignInButton"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="85dp"
+            android:layout_marginTop="48dp"
+            android:layout_marginBottom="35dp"
+            android:text="New Member?" />
 
-        android:layout_toEndOf="@+id/rememberText"
-        android:text="Register now"
+        <TextView
+            android:id="@+id/registerText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/googleSignInButton"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="48dp"
+            android:layout_marginEnd="45dp"
+            android:layout_toEndOf="@+id/rememberText"
+            android:text="Register now"
+            android:textColor="@color/btncolor"
+            android:textStyle="bold" />
 
-        android:textColor="@color/btncolor"
-        android:textStyle="bold" />
-</RelativeLayout>
+    </RelativeLayout>
+</ScrollView>

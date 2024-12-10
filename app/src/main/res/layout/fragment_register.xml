@@ -1,146 +1,132 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:fillViewport="true"> <!-- İçeriği ekran boyutuna doldurur -->
 
-    <!-- Üstteki görsel için ImageView -->
-
-    <!-- Başlık ve Alt Başlık -->
-
-    <ImageView
-        android:id="@+id/topImage"
-        android:layout_width="298dp"
-        android:layout_height="196dp"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="12dp"
-        android:src="@drawable/fragment2_image" />
-
-    <TextView
-        android:id="@+id/titleText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="114dp"
-        android:textSize="38sp"
-        android:text="Get Started"
-        android:textColor="@android:color/black"
-
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/subtitleText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/titleText"
-        android:layout_marginTop="4dp"
-        android:layout_centerHorizontal="true"
-        android:text="by creating a free account."
-        android:textSize="14sp"
-        android:textColor="@android:color/darker_gray" />
-
-    <!-- Form Alanları -->
-    <LinearLayout
-        android:id="@+id/linearLayout"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/subtitleText"
-        android:layout_marginTop="24dp"
-        android:orientation="vertical">
+        android:padding="24dp">
 
-        <EditText
-            android:id="@+id/fullNameEditText"
+        <!-- Üstteki görsel için ImageView -->
+        <ImageView
+            android:id="@+id/topImage"
+            android:layout_width="298dp"
+            android:layout_height="196dp"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="12dp"
+            android:src="@drawable/fragment2_image" />
+
+        <!-- Başlık ve Alt Başlık -->
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="114dp"
+            android:textSize="38sp"
+            android:text="Get Started"
+            android:textColor="@android:color/black"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/subtitleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/titleText"
+            android:layout_marginTop="4dp"
+            android:layout_centerHorizontal="true"
+            android:text="by creating a free account."
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray" />
+
+        <!-- Form Alanları -->
+        <LinearLayout
+            android:id="@+id/linearLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/rounded_login"
-            android:drawableEnd="@drawable/ic_user"
-            android:hint="Full name"
-            android:paddingLeft="10dp"
-            android:paddingEnd="10dp" />
+            android:layout_below="@id/subtitleText"
+            android:layout_marginTop="24dp"
+            android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/emailEditText"
-            android:layout_width="match_parent"
+            <EditText
+                android:id="@+id/fullNameEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_login"
+                android:drawableEnd="@drawable/ic_user"
+                android:hint="Full name"
+                android:paddingLeft="10dp"
+                android:paddingEnd="10dp" />
+
+            <EditText
+                android:id="@+id/emailEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/rounded_login"
+                android:drawableEnd="@drawable/mail"
+                android:fontFamily="sans-serif"
+                android:hint="Valid email"
+                android:paddingLeft="10dp"
+                android:paddingEnd="10dp" />
+
+            <EditText
+                android:id="@+id/phoneEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/rounded_login"
+                android:drawableEnd="@drawable/ic_phone"
+                android:fontFamily="sans-serif"
+                android:hint="Phone number"
+                android:paddingLeft="10dp"
+                android:paddingEnd="10dp" />
+
+            <EditText
+                android:id="@+id/passwordEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/rounded_login"
+                android:drawableEnd="@drawable/lock"
+                android:fontFamily="sans-serif"
+                android:hint="Strong Password"
+                android:inputType="textPassword"
+                android:paddingLeft="10dp"
+                android:paddingEnd="10dp" />
+
+        </LinearLayout>
+
+        <!-- Koşul Metni -->
+        <CheckBox
+            android:id="@+id/termsCheckBox"
+            android:layout_width="359dp"
+            android:layout_height="72dp"
+            android:layout_below="@+id/linearLayout"
+            android:layout_marginTop="18dp"
+            android:text="By checking the box you agree to our Terms and Conditions"
+            android:textColor="@android:color/darker_gray" />
+
+        <!-- Next Butonu -->
+        <Button
+            android:id="@+id/registerButton"
+            android:layout_width="171dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/rounded_login"
-            android:drawableEnd="@drawable/mail"
-            android:fontFamily="sans-serif"
-            android:hint="Valid email"
-            android:paddingLeft="10dp"
-            android:paddingEnd="10dp" />
+            android:layout_below="@+id/termsCheckBox"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="70dp"
+            android:layout_marginTop="36dp"
+            android:layout_marginEnd="70dp"
+            android:background="@drawable/rounded_button"
+            android:backgroundTint="@color/btncolor"
+            android:drawableEnd="@drawable/ic_arrow_right_only"
+            android:paddingEnd="10dp"
+            android:text="Next"
+            android:textColor="@android:color/white" />
 
-        <EditText
-            android:id="@+id/phoneEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/rounded_login"
-            android:drawableEnd="@drawable/ic_phone"
-            android:fontFamily="sans-serif"
-            android:hint="Phone number"
-            android:paddingLeft="10dp"
-            android:paddingEnd="10dp" />
-
-        <EditText
-            android:id="@+id/passwordEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/rounded_login"
-            android:drawableEnd="@drawable/lock"
-            android:fontFamily="sans-serif"
-            android:hint="Strong Password"
-            android:inputType="textPassword"
-            android:paddingLeft="10dp"
-            android:paddingEnd="10dp" />
-
-    </LinearLayout>
-
-    <!-- Koşul Metni -->
-
-
-    <!-- Next Butonu -->
-
-    <!-- Alt Kayıt Bilgisi -->
-
-    <CheckBox
-        android:id="@+id/termsCheckBox"
-        android:layout_width="359dp"
-        android:layout_height="72dp"
-        android:layout_above="@+id/registerButton"
-        android:layout_below="@+id/linearLayout"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="23dp"
-        android:layout_marginTop="18dp"
-        android:layout_marginEnd="5dp"
-        android:layout_marginBottom="28dp"
-        android:text="By checking the box you agree to our Terms and Conditions"
-        android:textColor="@android:color/darker_gray" />
-
-    <Button
-        android:id="@+id/registerButton"
-        android:layout_width="268dp"
-        android:layout_height="wrap_content"
-
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="18dp"
-        android:layout_marginBottom="50dp"
-        android:background="@drawable/rounded_button"
-        android:backgroundTint="@color/btncolor"
-        android:drawableEnd="@drawable/ic_arrow_right_only"
-
-        android:paddingEnd="10dp"
-        android:text="Next"
-        android:textColor="@android:color/white" />
-
-
-
-
-</RelativeLayout>
+    </RelativeLayout>
+</ScrollView>

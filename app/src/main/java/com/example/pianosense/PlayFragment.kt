@@ -9,6 +9,7 @@ import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Bundle
+import android.os.Environment
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.LayoutInflater
@@ -23,34 +24,24 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import be.tarsos.dsp.AudioDispatcher
-import be.tarsos.dsp.io.android.AudioDispatcherFactory
-import be.tarsos.dsp.pitch.PitchDetectionHandler
-import be.tarsos.dsp.pitch.PitchProcessor
+
+
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.RandomAccessFile
+
 
 class PlayFragment : Fragment() {
 
     private val musicViewModel: MusicViewModel by activityViewModels()
-
-
-
-    private lateinit var musicAdapter: MusicAdapter
-    private lateinit var musicList: List<Music>
     private val REQUEST_RECORD_AUDIO_PERMISSION = 200
 
-    private lateinit var audioRecord: AudioRecord
+    private lateinit var audioRecorder: AudioRecord
     private var isRecording = false
     private lateinit var audioFilePath: String
-    private lateinit var wavFilePath: String
-    private var isPlaying = false
-    private var mediaPlayer: MediaPlayer? = null
     private val soundAnalysisService by lazy { SoundAnalysisService(requireContext()) }
-    private lateinit var liveAnalysisTextView: TextView
-    private var isLiveAnalysisRunning = false
-    private var liveAudioDispatcher: AudioDispatcher? = null
+    private  var mediaPlayer: MediaPlayer? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -62,7 +53,14 @@ class PlayFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // UI bileşenlerini tanımlıyoruz
+
+        ActivityCompat.requestPermissions(
+            requireActivity(),
+            arrayOf(Manifest.permission.RECORD_AUDIO),
+            REQUEST_RECORD_AUDIO_PERMISSION
+        )
+
+
         val musicTitleTextView = view.findViewById<TextView>(R.id.musicTitle)
         val musicComposerTextView = view.findViewById<TextView>(R.id.musicComposer)
         val musicSheetImageView = view.findViewById<ImageView>(R.id.musicSheetImage)
@@ -70,86 +68,258 @@ class PlayFragment : Fragment() {
         val listenRecordButton = view.findViewById<Button>(R.id.listenRecord)
         val resultsButton = view.findViewById<Button>(R.id.resultsButton)
 
+        musicViewModel.selectedMusic.observe(viewLifecycleOwner) { music ->
+            if (music != null) {
+                musicTitleTextView.text = music.title
+                musicComposerTextView.text = music.composer
+                musicSheetImageView.setImageResource(R.drawable.avatar)
+                Log.d("PlayFragment", "Displaying music: \${music.title}, Composer: \${music.composer}")
 
-
+            }
+        }
 
         startRecordButton.setOnClickListener {
             if (checkMicrophonePermission()) {
-                if (isLiveAnalysisRunning) {
-                    Toast.makeText(requireContext(), "Live analysis is already running", Toast.LENGTH_SHORT).show()
+                if (isRecording) {
+                    stopRecording()
+                    startRecordButton.text = "Start Recording"
                 } else {
-                    startLiveAudioAnalysis()
-                    startRecordButton.text = "Live Analysis Running"
+                    startRecording()
+                    startRecordButton.text = "Stop Recording"
                 }
             } else {
                 requestMicrophonePermission()
             }
         }
 
-        // Canlı ses analizini durdurma
         listenRecordButton.setOnClickListener {
-            if (isLiveAnalysisRunning) {
-                stopLiveAudioAnalysis()
-                startRecordButton.text = "Start Live Analysis"
-            } else {
-                Toast.makeText(requireContext(), "Live analysis is not running", Toast.LENGTH_SHORT).show()
+            try {
+                // İndirilenler klasörünün yolu
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString()
+
+                // Kaydedilen dosyanın tam yolu (indirilenler klasöründe "recording.wav")
+                val wavFilePath = "$downloadsDir/recording.wav"
+
+                // Dosyanın varlığını kontrol et
+                val wavFile = File(wavFilePath)
+                if (wavFile.exists()) {
+                    playRecordedAudio(wavFilePath) // Dosya oynatılır
+                } else {
+                    Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: IOException) {
+                Log.e("PlayFragment", "Error playing asset file", e)
+                Toast.makeText(requireContext(), "Error playing test file", Toast.LENGTH_SHORT).show()
             }
         }
+
+        resultsButton.setOnClickListener {
+
+
+            try {
+                val assetManager = requireContext().assets
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+
+                // Orijinal müzik dosyasını Downloads klasörüne kopyala
+                val originalInputStream = assetManager.open("originalMusic1.wav")
+                val originalWavFile = File(downloadsDir, "tempOriginalMusic.wav")
+                if (!originalWavFile.exists()) {
+                    FileOutputStream(originalWavFile).use { outputStream ->
+                        originalInputStream.copyTo(outputStream)
+                    }
+                }
+                Log.d("PlayFragment", "Orijinal dosya Downloads klasörüne kopyalandı: ${originalWavFile.absolutePath}")
+
+                // Kaydedilen müzik dosyasını Downloads klasörüne kopyala
+                val recordedInputStream = assetManager.open("test.wav")
+                val recordedWavFile = File(downloadsDir, "tempRecordedMusic.wav")
+                if (!recordedWavFile.exists()) {
+                    FileOutputStream(recordedWavFile).use { outputStream ->
+                        recordedInputStream.copyTo(outputStream)
+                    }
+                }
+                Log.d("PlayFragment", "Kaydedilen dosya Downloads klasörüne kopyalandı: ${recordedWavFile.absolutePath}")
+
+                // PCM dosya yolları
+                val originalPcmFile = File(downloadsDir, "tempOriginalMusic.pcm")
+                val recordedPcmFile = File(downloadsDir, "tempRecordedMusic.pcm")
+
+                // PCM dönüşümü (orijinal ve kaydedilen WAV dosyaları için)
+                val soundAnalysisService = SoundAnalysisService(requireContext())
+                val originalConverted = soundAnalysisService.convertWavToPcm(originalWavFile.absolutePath, originalPcmFile.absolutePath)
+                val recordedConverted = soundAnalysisService.convertWavToPcm(recordedWavFile.absolutePath, recordedPcmFile.absolutePath)
+
+                if (originalConverted && recordedConverted) {
+                    Log.d("SoundAnalysisService", "PCM dönüşümleri başarılı")
+
+                    // PCM dosyalarını analiz et
+                    val comparisonResults = soundAnalysisService.comparePcmFiles(originalPcmFile.absolutePath, recordedPcmFile.absolutePath)
+
+                    try {
+                        // Notaları zaman damgasına göre filtrele (0.5 saniyeden kısa zaman farklarını kaldır)
+                        val filteredResults = filterNotesByTimestamp(
+                            comparisonResults.map { comparisonResult ->
+                                NoteInfo(
+                                    originalNote = comparisonResult.originalNote?.originalNote ?: "None",
+                                    recordedNote = comparisonResult.recordedNote?.recordedNote ?: "None",
+                                    timestamp = comparisonResult.originalNote?.timestamp ?: 0.0,
+                                    isCorrect = comparisonResult.isCorrect
+                                )
+                            },
+                            0.5
+                        )
+
+                        musicViewModel.setAnalysisResults(filteredResults)
+                    } catch (e: Exception) {
+                        Log.e("PlayFragment", "Error transforming results", e)
+                        Toast.makeText(requireContext(), "Error processing analysis results", Toast.LENGTH_SHORT).show()
+                    }
+
+                    // Sonuçları gösterecek fragment'e geçiş yap
+                    requireActivity().supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, CheckResultsFragment())
+                        .addToBackStack(null)
+                        .commit()
+                } else {
+                    Toast.makeText(requireContext(), "PCM dönüşümü başarısız oldu", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: IOException) {
+                Log.e("PlayFragment", "Error processing asset files", e)
+                Toast.makeText(requireContext(), "Error analyzing audio files", Toast.LENGTH_SHORT).show()
+            }
+
+        }
+
+
+    }
+
+    private fun filterNotesByTimestamp(notes: List<NoteInfo>, minTimeDifference: Double): List<NoteInfo> {
+        val filteredNotes = mutableListOf<NoteInfo>()
+        var lastTimestamp = -minTimeDifference // İlk karşılaştırma için zaman farkını büyük tutarız.
+
+        for (note in notes) {
+            if (note.timestamp - lastTimestamp >= minTimeDifference) {
+                filteredNotes.add(note)
+                lastTimestamp = note.timestamp
+            }
+        }
+
+        return filteredNotes
     }
 
 
-    // Canlı ses analizi başlat
-    private fun startLiveAudioAnalysis() {
+    private fun startRecording() {
         val sampleRate = 44100
-        val bufferSize = AudioRecord.getMinBufferSize(
+        val channelConfig = AudioFormat.CHANNEL_IN_MONO
+        val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+        val bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
+
+        checkMicrophonePermission()
+        val audioRecord = AudioRecord(
+            MediaRecorder.AudioSource.MIC,
             sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
-        ) * 2
-        //burası ile mikrofondan gelen veriler dispacther ile alıyoruz
-        liveAudioDispatcher = AudioDispatcherFactory.fromDefaultMicrophone(sampleRate, bufferSize, 0)
-
-        val pitchDetectionHandler = PitchDetectionHandler { result, _ ->
-            val pitchInHz = result.pitch
-            if (pitchInHz > 0) {
-                val closestNote = soundAnalysisService.findClosestNoteJava(pitchInHz)
-                requireActivity().runOnUiThread {
-                    //liveAnalysisTextView?.text = "Frekans: $pitchInHz Hz, Nota: $closestNote"
-                    Log.d("LiveAnalysis", "Frekans: $pitchInHz Hz, Nota: $closestNote") // Daha detaylı bilgi için
-
-                }
-            }
-        }
-
-        val pitchProcessor = PitchProcessor(
-            PitchProcessor.PitchEstimationAlgorithm.YIN,
-            sampleRate.toFloat(),
-            bufferSize,
-            pitchDetectionHandler
+            channelConfig,
+            audioFormat,
+            bufferSize
         )
 
-        liveAudioDispatcher?.addAudioProcessor(pitchProcessor)
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val outputFile = File(downloadsDir, "recording.wav")
+        if (outputFile.exists()) outputFile.delete()
+        outputFile.createNewFile()
+
+
+        isRecording = true
 
         Thread {
-            isLiveAnalysisRunning = true
+            audioRecord.startRecording()
+            val outputStream = FileOutputStream(outputFile)
+            val buffer = ByteArray(bufferSize)
+
             try {
-                while (isLiveAnalysisRunning) {
-                    liveAudioDispatcher?.run()
+                while (isRecording) {
+                    val read = audioRecord.read(buffer, 0, buffer.size)
+                    if (read > 0) {
+                        outputStream.write(buffer, 0, read)
+                    }
                 }
-            } catch (e: Exception) {
-                Log.e("LiveAnalysis", "Hata: ${e.message}")
+            } catch (e: IOException) {
+                e.printStackTrace()
+            } finally {
+                audioRecord.stop()
+                audioRecord.release()
+                outputStream.close()
+
+                // WAV başlığı ekle
+                val audioLength = outputFile.length()
+                val byteRate = 16 * sampleRate * 1 / 8 // 16 bit * sampleRate * mono
+                writeWavHeader(outputFile, audioLength - 44, sampleRate, 1, byteRate)
+
+                requireActivity().runOnUiThread {
+                    Toast.makeText(requireContext(), "Recording saved as WAV", Toast.LENGTH_SHORT).show()
+                }
             }
         }.start()
-
-        Toast.makeText(requireContext(), "Live audio analysis started", Toast.LENGTH_SHORT).show()
     }
 
-    // Canlı analizi durdur
-    private fun stopLiveAudioAnalysis() {
-        isLiveAnalysisRunning = false
-        liveAudioDispatcher?.stop()
-        Toast.makeText(requireContext(), "Live audio analysis stopped", Toast.LENGTH_SHORT).show()
+    private fun stopRecording() {
+        isRecording = false
     }
+
+    // Stop Recording Logic
+  /*  private fun stopRecording(){
+        audioRecorder.stop()
+        audioRecorder.release()
+        isRecording = false
+        Toast.makeText(requireContext(), "Recording stopped", Toast.LENGTH_SHORT).show()
+    }
+*/
+
+
+    private fun playRecordedAudio(wavFilePath: String) {
+        try {
+            // Önceki MediaPlayer'i serbest bırak
+            mediaPlayer?.release()
+
+            // Yeni MediaPlayer başlat
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(wavFilePath) // WAV dosyasının yolu
+                prepare()
+                start()
+            }
+
+            // Çalma sırasında kullanıcıya bilgi ver
+            Toast.makeText(requireContext(), "Playing recorded audio", Toast.LENGTH_SHORT).show()
+
+            // Çalma tamamlandığında dinleyici
+            mediaPlayer?.setOnCompletionListener {
+                Toast.makeText(requireContext(), "Playback finished", Toast.LENGTH_SHORT).show()
+                stopAudioPlayback() // Çalmayı durdur ve MediaPlayer'i temizle
+            }
+        } catch (e: IOException) {
+            Log.e("PlayFragment", "Error playing recorded audio", e)
+            Toast.makeText(requireContext(), "Playback failed", Toast.LENGTH_SHORT).show()
+        } catch (e: IllegalStateException) {
+            Log.e("PlayFragment", "MediaPlayer is in illegal state", e)
+            Toast.makeText(requireContext(), "Playback failed due to invalid state", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e("PlayFragment", "Unexpected error during playback", e)
+            Toast.makeText(requireContext(), "Unexpected error occurred", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Çalmayı durdurmak için yardımcı fonksiyon
+    private fun stopAudioPlayback() {
+        mediaPlayer?.apply {
+            if (isPlaying) {
+                stop() // Oynatmayı durdur
+            }
+            release() // MediaPlayer'i serbest bırak
+        }
+        mediaPlayer = null
+        Toast.makeText(requireContext(), "Playback stopped", Toast.LENGTH_SHORT).show()
+    }
+
 
 
     private fun checkMicrophonePermission(): Boolean {
@@ -167,28 +337,203 @@ class PlayFragment : Fragment() {
         )
     }
 
-    private fun setMusicImageWidth(imageView: ImageView, imageResId: Int) {
-        // Görüntü genişliğini ekran boyutuna göre ayarlıyoruz
-        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeResource(resources, imageResId, options)
-        val imageWidth = options.outWidth
 
-        imageView.updateLayoutParams {
-            width = imageWidth
+    private fun compareAudioFiles(originalMusicPath: String, recordedWavPath: String): List<NoteInfo> {
+        val soundAnalysisService = SoundAnalysisService(requireContext())
+        val originalNotes = soundAnalysisService.analyzeWavFile(originalMusicPath)
+        val recordedNotes = soundAnalysisService.analyzeWavFile(recordedWavPath)
+
+        val comparisonList = mutableListOf<NoteInfo>()
+
+        originalNotes.forEach { originalNote ->
+            val closestMatch = recordedNotes.minByOrNull {
+                Math.abs(it.timestamp - originalNote.timestamp)
+            }
+
+            if (closestMatch != null && Math.abs(closestMatch.timestamp - originalNote.timestamp) <= 0.5) {
+                // Zaman toleransı içinde eşleşme var
+                val isCorrect = originalNote.originalNote == closestMatch.recordedNote
+                comparisonList.add(
+                    NoteInfo(
+                        originalNote = originalNote.originalNote,
+                        recordedNote = closestMatch.recordedNote,
+                        timestamp = originalNote.timestamp,
+                        isCorrect = isCorrect
+                    )
+                )
+            } else {
+                // Eşleşme bulunamadı
+                comparisonList.add(
+                    NoteInfo(
+                        originalNote = originalNote.originalNote,
+                        recordedNote = "None",
+                        timestamp = originalNote.timestamp,
+                        isCorrect = false
+                    )
+                )
+            }
         }
-        imageView.scaleType = ImageView.ScaleType.FIT_XY
 
+        return comparisonList
+    }
+
+
+   /* private fun prepareFFmpegBinary(): String? {
+        val abi = Build.SUPPORTED_ABIS[0] // Cihazın birinci öncelikli mimarisi
+        val ffmpegDir = when (abi) {
+            "x86" -> "ffmpeg/android/jni/FFmpeg/build/x86" // Güncel yol
+            "x86_64" -> "ffmpeg/android/jni/FFmpeg/build/x86_64" // Güncel yol
+            "armeabi-v7a" -> "ffmpeg/android/jni/FFmpeg/build/armeabi-v7a"
+            "arm64-v8a" -> "ffmpeg/android/jni/FFmpeg/build/arm64-v8a"
+            else -> null
+        }
+
+        if (ffmpegDir == null) {
+            Log.e("FFmpeg", "Unsupported ABI: $abi")
+            return null
+        }
+
+        val ffmpegFileName = "ffmpeg" // Binary dosya adı
+        val ffmpegFile = File(requireContext().cacheDir, ffmpegFileName)
+
+        return try {
+            if (!ffmpegFile.exists()) {
+                requireContext().assets.open("$ffmpegDir/$ffmpegFileName").use { inputStream ->
+                    FileOutputStream(ffmpegFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                ffmpegFile.setExecutable(true) // Çalıştırılabilir hale getir
+            }
+
+            if (ffmpegFile.exists() && ffmpegFile.canExecute()) {
+                Log.i("FFmpeg", "FFmpeg binary is executable: ${ffmpegFile.absolutePath}")
+            } else {
+                Log.e("FFmpeg", "Failed to make FFmpeg binary executable: ${ffmpegFile.absolutePath}")
+            }
+
+            ffmpegFile.absolutePath
+        } catch (e: IOException) {
+            Log.e("FFmpeg", "Failed to prepare FFmpeg binary", e)
+            null
+        }
+    }
+
+*/
+
+
+    private fun writeWavHeader(file: File, audioLength: Long, sampleRate: Int, channels: Int, byteRate: Int) {
+        val header = ByteArray(44)
+
+        // RIFF Header
+        header[0] = 'R'.code.toByte()
+        header[1] = 'I'.code.toByte()
+        header[2] = 'F'.code.toByte()
+        header[3] = 'F'.code.toByte()
+
+        // Total file size minus 8 bytes for the RIFF header
+        val fileSize = (audioLength + 36).toInt()
+        header[4] = (fileSize and 0xff).toByte()
+        header[5] = ((fileSize shr 8) and 0xff).toByte()
+        header[6] = ((fileSize shr 16) and 0xff).toByte()
+        header[7] = ((fileSize shr 24) and 0xff).toByte()
+
+        // WAVE Header
+        header[8] = 'W'.code.toByte()
+        header[9] = 'A'.code.toByte()
+        header[10] = 'V'.code.toByte()
+        header[11] = 'E'.code.toByte()
+
+        // fmt sub-chunk
+        header[12] = 'f'.code.toByte()
+        header[13] = 'm'.code.toByte()
+        header[14] = 't'.code.toByte()
+        header[15] = ' '.code.toByte()
+        header[16] = 16 // Subchunk1Size (16 for PCM)
+        header[17] = 0
+        header[18] = 0
+        header[19] = 0
+
+        header[20] = 1 // AudioFormat (1 for PCM)
+        header[21] = 0
+        header[22] = channels.toByte() // Number of channels
+        header[23] = 0
+        header[24] = (sampleRate and 0xff).toByte()
+        header[25] = ((sampleRate shr 8) and 0xff).toByte()
+        header[26] = ((sampleRate shr 16) and 0xff).toByte()
+        header[27] = ((sampleRate shr 24) and 0xff).toByte()
+
+        header[28] = (byteRate and 0xff).toByte()
+        header[29] = ((byteRate shr 8) and 0xff).toByte()
+        header[30] = ((byteRate shr 16) and 0xff).toByte()
+        header[31] = ((byteRate shr 24) and 0xff).toByte()
+
+        header[32] = (channels * 2).toByte() // Block align
+        header[33] = 0
+        header[34] = 16 // Bits per sample
+        header[35] = 0
+
+        // data sub-chunk
+        header[36] = 'd'.code.toByte()
+        header[37] = 'a'.code.toByte()
+        header[38] = 't'.code.toByte()
+        header[39] = 'a'.code.toByte()
+
+        header[40] = (audioLength and 0xff).toByte()
+        header[41] = ((audioLength shr 8) and 0xff).toByte()
+        header[42] = ((audioLength shr 16) and 0xff).toByte()
+        header[43] = ((audioLength shr 24) and 0xff).toByte()
+
+        RandomAccessFile(file, "rw").use { it.write(header) }
+    }
+
+
+
+
+
+    ///////
+    /*private fun setMusicImageWidth(imageView: ImageView, imageResId: Int) {
+        // 1. BitmapFactory.Options ayarlarını yap
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true // Sadece boyutları al
+        }
+        BitmapFactory.decodeResource(resources, imageResId, options)
+
+        // 2. Ekran boyutunu al
         val displayMetrics = DisplayMetrics()
         requireActivity().windowManager.defaultDisplay.getMetrics(displayMetrics)
         val screenWidth = displayMetrics.widthPixels
 
-        if (imageWidth > screenWidth) {
-            imageView.updateLayoutParams { width = imageWidth }
-        } else {
-            imageView.updateLayoutParams { width = screenWidth }
+        // 3. Ölçekleme oranını hesapla
+        options.inSampleSize = calculateInSampleSize(options, screenWidth)
+        options.inJustDecodeBounds = false // Artık tam boyutlu bitmap oluşturabiliriz
+
+        // 4. Bitmap'i ölçekleyerek yükle
+        val scaledBitmap = BitmapFactory.decodeResource(resources, imageResId, options)
+
+        // 5. ImageView'a scaled bitmap'i yükle
+        imageView.setImageBitmap(scaledBitmap)
+        imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+
+        // 6. Genişlik ayarlarını yap
+        imageView.updateLayoutParams {
+            width = screenWidth
+            height = (options.outHeight * (screenWidth.toFloat() / options.outWidth)).toInt()
         }
     }
 
+    // Ölçekleme oranını hesaplayan yardımcı fonksiyon
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int): Int {
+        val width = options.outWidth
+        var inSampleSize = 1
 
+        if (width > reqWidth) {
+            val halfWidth = width / 2
+            while ((halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
+    }*/
 
 }

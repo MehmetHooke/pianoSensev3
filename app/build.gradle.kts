@@ -81,7 +81,7 @@ dependencies {
     //implementation (files("libs/TarsosDSP.jar"))
     implementation ("com.google.code.gson:gson:2.8.9")
 
-    implementation ("com.arthenica:mobile-ffmpeg-full:4.4.LTS")
+    //implementation ("com.arthenica:mobile-ffmpeg-full:4.4.LTS")
 
     //implementation (libs.tarsosdsp.v24android)
 
@@ -105,6 +105,12 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(files("libs\\TarsosDSP-Android-2.4.jar"))
 
+
+    implementation ("com.arthenica:mobile-ffmpeg-full:4.4")
+
+
+
+    //implementation("com.github.jillesvangurp:tarsosdsp:2.4")
 
 
 

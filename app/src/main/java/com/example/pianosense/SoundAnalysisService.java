@@ -1,40 +1,34 @@
 package com.example.pianosense;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
-import android.provider.Settings;
 import android.util.Log;
 
-import com.arthenica.mobileffmpeg.FFmpeg;
 import com.arthenica.mobileffmpeg.Config;
-import androidx.core.app.ActivityCompat;
-
-import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.WaveformSimilarityBasedOverlapAdd;
-import be.tarsos.dsp.io.android.AudioDispatcherFactory;
-import be.tarsos.dsp.pitch.PitchDetectionHandler;
-import be.tarsos.dsp.pitch.PitchProcessor;
-import be.tarsos.dsp.pitch.PitchProcessor.PitchEstimationAlgorithm;
-import be.tarsos.dsp.io.android.AndroidFFMPEGLocator;
-
+import com.arthenica.mobileffmpeg.ExecuteCallback;
+import com.arthenica.mobileffmpeg.FFmpeg;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.io.TarsosDSPAudioFormat;
+import be.tarsos.dsp.io.UniversalAudioInputStream;
+import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import be.tarsos.dsp.pitch.PitchDetectionResult;
+import be.tarsos.dsp.pitch.PitchProcessor;
 
 public class SoundAnalysisService {
     private static final String TAG = "SoundAnalysisService";
-    private final File ffmpegFile;
     private final Context context;
-
+    FFmpeg fFmpeg;
     // Notaların frekansları
     private static final Map<String, Double> noteFrequencies = new HashMap<>();
-    private String lastDetectedNote = "";
 
     static {
         // Notalar ve frekanslarını eşleştirme
@@ -131,82 +125,159 @@ public class SoundAnalysisService {
 
     public SoundAnalysisService(Context context) {
         this.context = context;
-        ffmpegFile = new File(context.getCacheDir(), "ffmpeg");
+    }
+
+    public List<NoteInfo> analyzeWavFile(String wavFilePath) {
+        List<NoteInfo> noteInfoList = new ArrayList<>();
+
         try {
-            loadFFmpegBinary();
-            Log.d(TAG, "FFmpeg binary başarıyla yüklendi ve çalıştırılabilir hale getirildi.");
-        } catch (IOException e) {
-            Log.e(TAG, "FFmpeg binary yüklenirken hata: " + e.getMessage());
+            // PCM dosyası için geçici bir yol oluştur
+            File pcmFile = new File(context.getCacheDir(), "temp_audio.pcm");
+            String pcmFilePath = pcmFile.getAbsolutePath();
+
+            // WAV -> PCM dönüştürme
+            boolean conversionSuccess = convertWavToPcm(wavFilePath, pcmFilePath);
+            if (!conversionSuccess) {
+                Log.e(TAG, "Failed to convert WAV to PCM");
+                return noteInfoList;
+            }
+
+            // PCM dosyasını analiz et
+            analyzePcmFile(pcmFilePath, noteInfoList);
+        } catch (Exception e) {
+            Log.e(TAG, "Error analyzing WAV file", e);
         }
+
+        return noteInfoList;
     }
 
 
-    public void analyzeAudio(String wavFilePath) {
-        try {
-            // AudioDispatcher doğrudan WAV dosyasını işleyebilir
-            AudioDispatcher dispatcher = AudioDispatcherFactory.fromPipe(wavFilePath, 44100, 1024, 512);
 
-            PitchDetectionHandler pdh = (result, e) -> {
-                float pitchInHz = result.getPitch();
+//çalışan hali
+private void analyzePcmFile(String pcmFilePath, List<NoteInfo> noteInfoList) {
+    try {
+        FileInputStream fileInputStream = new FileInputStream(pcmFilePath);
 
-                if (pitchInHz > 0) {
-                    String closestNote = findClosestNote(pitchInHz);
-                    if (!closestNote.equals(lastDetectedNote)) {
-                        lastDetectedNote = closestNote;
-                        Log.d(TAG, "Algılanan Nota: " + closestNote + " Frekans: " + pitchInHz + " Hz");
+        // PCM formatını manuel olarak tanımlayın
+        TarsosDSPAudioFormat format = new TarsosDSPAudioFormat(
+                44100, // örnekleme hızı
+                16,    // bit derinliği
+                1,     // kanal sayısı (mono)
+                true,  // signed (işaretli mi?)
+                false  // big-endian (big-endian değil)
+        );
+
+        // UniversalAudioInputStream'e formatı geçirin
+        UniversalAudioInputStream audioInputStream = new UniversalAudioInputStream(fileInputStream, format);
+
+        // AudioDispatcher oluşturun
+        AudioDispatcher dispatcher = new AudioDispatcher(audioInputStream, 1024, 512);
+
+        // PitchProcessor ekleyin
+        dispatcher.addAudioProcessor(new PitchProcessor(
+                PitchProcessor.PitchEstimationAlgorithm.YIN,
+                44100f,
+                1024,
+                (pitchDetectionResult, audioEvent) -> {
+                    float pitchInHz = pitchDetectionResult.getPitch();
+                    if (pitchInHz > 0) {
+                        String closestNote = findClosestNoteJava(pitchInHz);
+                        double timestamp = audioEvent.getTimeStamp();
+                        NoteInfo noteInfo = new NoteInfo(closestNote, closestNote, timestamp, true);
+                        noteInfoList.add(noteInfo);
+
+                        // Notayı log'a yazdır
+
+                        Log.d(TAG, "Detected note: " + noteInfo.toString());
                     }
                 }
-            };
+        ));
 
-            dispatcher.addAudioProcessor(new PitchProcessor(
-                    PitchProcessor.PitchEstimationAlgorithm.YIN,
-                    44100,
-                    1024,
-                    pdh
-            ));
+        dispatcher.run();
 
-            new Thread(dispatcher::run).start();
-
-        } catch (Exception e) {
-            Log.e(TAG, "WAV dosyası analiz edilirken hata oluştu: " + e.getMessage());
+        // Tüm analiz sonuçlarını log'a yazdır
+        Log.d(TAG, "Analysis completed. Notes:");
+        for (NoteInfo note : noteInfoList) {
+            Log.d(TAG, note.toString());
         }
+
+    } catch (Exception e) {
+        Log.e(TAG, "Error analyzing PCM file", e);
+    }
+}
+
+
+
+    public boolean convertWavToPcm(String inputWavPath, String outputPcmPath) {
+        // FFmpeg komutu
+        String[] command = {
+                "-y",
+                "-i", inputWavPath,
+                "-f", "s16le",
+                "-ac", "1",
+                "-ar", "44100",
+                outputPcmPath
+        };
+
+        // Asenkron FFmpeg çalıştırma
+        FFmpeg.executeAsync(command, new ExecuteCallback() {
+            @Override
+            public void apply(long executionId, int returnCode) {
+                if (returnCode == 0) {
+                    Log.d(TAG, "PCM conversion successful: " + outputPcmPath);
+                } else {
+                    Log.e(TAG, "PCM conversion failed. Return code: " + returnCode);
+                }
+            }
+        });
+
+        return true; // Dönüşümün asenkron olduğu için sadece işlem başlatıldığına dair bilgi döner
     }
 
 
-    //kullanım dışı
-    private void analyzePcmFile(String pcmFilePath) {
+
+    public List<ComparisonResult> comparePcmFiles(String originalPcmPath, String recordedPcmPath) {
+        List<NoteInfo> originalNotes = new ArrayList<>();
+        List<NoteInfo> recordedNotes = new ArrayList<>();
+        List<ComparisonResult> comparisonResults = new ArrayList<>();
+
         try {
-            AudioDispatcher dispatcher = AudioDispatcherFactory.fromPipe(pcmFilePath, 44100, 1024, 512);
+            // Orijinal PCM dosyasını analiz et
+            analyzePcmFile(originalPcmPath, originalNotes);
 
-            PitchDetectionHandler pdh = (result, e) -> {
-                float pitchInHz = result.getPitch();
+            // Kaydedilen PCM dosyasını analiz et
+            analyzePcmFile(recordedPcmPath, recordedNotes);
 
-                if (pitchInHz > 0) {
-                    String closestNote = findClosestNote(pitchInHz);
-                    if (!closestNote.equals(lastDetectedNote)) {
-                        lastDetectedNote = closestNote;
-                        Log.d(TAG, "Algılanan Nota: " + closestNote + " Frekans: " + pitchInHz + " Hz");
+            // İki analiz sonucunu karşılaştır
+            for (NoteInfo originalNote : originalNotes) {
+                NoteInfo closestMatch = null;
+                double smallestTimeDifference = Double.MAX_VALUE;
+
+                for (NoteInfo recordedNote : recordedNotes) {
+                    double timeDifference = Math.abs(originalNote.getTimestamp() - recordedNote.getTimestamp());
+                    if (timeDifference < smallestTimeDifference) {
+                        smallestTimeDifference = timeDifference;
+                        closestMatch = recordedNote;
                     }
                 }
-            };
 
-            dispatcher.addAudioProcessor(new PitchProcessor(
-                    PitchProcessor.PitchEstimationAlgorithm.YIN,
-                    44100,
-                    1024,
-                    pdh
-            ));
-
-            new Thread(dispatcher::run).start();
-
+                boolean isCorrect = closestMatch != null && originalNote.getOriginalNote().equals(closestMatch.getOriginalNote());
+                comparisonResults.add(new ComparisonResult(originalNote, closestMatch, isCorrect));
+            }
         } catch (Exception e) {
-            Log.e(TAG, "PCM dosyası analiz edilirken hata oluştu: " + e.getMessage());
+            Log.e(TAG, "Error comparing PCM files", e);
         }
+
+        return comparisonResults;
     }
 
 
-    //tanımlanan ile static olan girilen nota arasında farkı en az olan notayı döndüren fonksiyondur
-    public String findClosestNoteJava(float frequency) {
+
+
+
+    //////////
+
+    public static String findClosestNoteJava(float frequency) {
         String closestNote = "";
         double smallestDifference = Double.MAX_VALUE;
 
@@ -225,61 +296,4 @@ public class SoundAnalysisService {
     }
 
 
-
-    private void loadFFmpegBinary() throws IOException {
-        File ffmpegFile = new File(context.getCacheDir(), "ffmpeg");
-
-        if (!ffmpegFile.exists()) {
-            try (InputStream is = context.getAssets().open("ffmpeg");
-                 FileOutputStream fos = new FileOutputStream(ffmpegFile)) {
-
-                byte[] buffer = new byte[4096];
-                int length;
-                while ((length = is.read(buffer)) > 0) {
-                    fos.write(buffer, 0, length);
-                }
-            }
-        }
-
-        // ffmpeg dosyasını çalıştırılabilir yap
-        if (!ffmpegFile.setExecutable(true)) {
-            throw new IOException("FFmpeg dosyasına çalıştırma izni verilemedi.");
-        }
-    }
-
-
-    private void ensureFFmpegPermissions() throws IOException {
-        if (!ffmpegFile.exists()) {
-            try (InputStream is = context.getAssets().open("ffmpeg");
-                 FileOutputStream fos = new FileOutputStream(ffmpegFile)) {
-
-                byte[] buffer = new byte[4096];
-                int length;
-                while ((length = is.read(buffer)) > 0) {
-                    fos.write(buffer, 0, length);
-                }
-            }
-        }
-
-        // ffmpeg dosyasını çalıştırılabilir yap
-        ffmpegFile.setExecutable(true);
-        Runtime.getRuntime().exec("chmod 777 " + ffmpegFile.getAbsolutePath());
-    }
-
-
-
-    private String findClosestNote(double frequency) {
-        String closestNote = "";
-        double smallestDifference = Double.MAX_VALUE;
-
-        for (Map.Entry<String, Double> entry : noteFrequencies.entrySet()) {
-            double difference = Math.abs(entry.getValue() - frequency);
-            if (difference < smallestDifference) {
-                smallestDifference = difference;
-                closestNote = entry.getKey();
-            }
-        }
-
-        return closestNote;
-    }
 }
