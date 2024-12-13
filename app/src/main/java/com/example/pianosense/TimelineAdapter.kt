@@ -1,53 +1,44 @@
 package com.example.pianosense
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import java.util.*
 
-class TimelineAdapter(private var notes: List<NoteInfo>) :
-    RecyclerView.Adapter<TimelineAdapter.NoteViewHolder>() {
+class TimelineAdapter(private var data: List<ComparisonResult>) : RecyclerView.Adapter<TimelineAdapter.ViewHolder>() {
 
-    class NoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val noteTextView: TextView = itemView.findViewById(R.id.noteTextView)
-        val timestampTextView : TextView = itemView.findViewById(R.id.timestampTextView)
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val originalNoteTextView: TextView = view.findViewById(R.id.originalNoteTextView)
+        val recordedNoteTextView: TextView = view.findViewById(R.id.recordedNoteTextView)
+        val timestampTextView: TextView = view.findViewById(R.id.timestampTextView)
+        val isCorrectTextView: TextView = view.findViewById(R.id.isCorrectTextView)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NoteViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_note, parent, false)
-        return NoteViewHolder(view)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_note, parent, false)
+        return ViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
-        val noteInfo = notes[position]
-        val formattedTimestamp = formatTimestamp(noteInfo.timestamp)
-        holder.noteTextView.text = "${noteInfo.recordedNote}"
-        holder.timestampTextView.text = "Time: $formattedTimestamp"
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val result = data[position]
 
-        if (noteInfo.isCorrect) {
-            holder.noteTextView.setBackgroundResource(R.color.green)
-        } else {
-            holder.noteTextView.setBackgroundResource(R.color.red)
-        }
-    }
-
-
-    override fun getItemCount(): Int {
-        return notes.size
-    }
-
-    fun formatTimestamp(timestamp: Double): String {
-        val seconds = timestamp
-        return String.format("%.2f s", seconds)
+        holder.originalNoteTextView.text = "Original Note: " + (result.originalNote?.originalNote ?: "None")
+        holder.recordedNoteTextView.text = "Recorded Note: " + (result.recordedNote?.recordedNote ?: "None")
+        holder.timestampTextView.text = "Time: " + String.format("%.2f", result.originalNote?.timestamp ?: 0.0)
+        holder.isCorrectTextView.text = "Status: " + if (result.isCorrect) "Correct" else "Wrong"
+        holder.isCorrectTextView.setTextColor(
+            if (result.isCorrect) Color.parseColor("#4CAF50") else Color.parseColor("#F44336")
+        )
     }
 
 
-    // Listeyi güncellemek için bir yöntem ekleyin
-    fun updateList(newNotes: List<NoteInfo>) {
-        notes = newNotes
+    override fun getItemCount(): Int = data.size
+
+    fun updateData(newData: List<ComparisonResult>) {
+        data = newData
         notifyDataSetChanged()
     }
 }

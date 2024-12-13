@@ -7,19 +7,36 @@
 
     <TextView
         android:id="@+id/resultsTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Analysis Results"
+        android:background="@drawable/rounded_button"
         android:textSize="24sp"
+        android:paddingTop="8dp"
+        android:textColor="@color/white"
+        android:textAlignment="center"
         android:textStyle="bold"
         android:layout_gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="-5dp"/>
+
+    <!-- Doğruluk Bilgisi -->
+    <TextView
+        android:id="@+id/accuracyTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Doğruluk: -/-"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginTop="10dp"
+        android:layout_gravity="center_horizontal"
+        />
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/resultsRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:padding="8dp"/>
+        android:layout_marginTop="5dp"
+        android:padding="1dp"/>
 
 </LinearLayout>

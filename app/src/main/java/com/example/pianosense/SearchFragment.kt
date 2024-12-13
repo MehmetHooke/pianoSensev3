@@ -39,9 +39,18 @@ class SearchFragment : Fragment() {
 
         // Müzik listesini tanımlıyoruz
         musicList = listOf(
-            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "path/to/original/music/file.wav"),
-            Music(2, "Beauty", "Jon Cossack", R.drawable.avatar, "path/to/original/music/file.wav"),
-            Music(3, "Paragon Sky", "Glenn Natale", R.drawable.avatar, "path/to/original/music/file.wav")
+            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "originalMusic1.wav"),
+            Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
+            Music(3, "Für Elise", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
+            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "originalMusic1.wav"),
+            Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
+            Music(3, "Für Elise", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
+            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "originalMusic1.wav"),
+            Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
+            Music(3, "Für Elise", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
+            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "originalMusic1.wav"),
+            Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
+            Music(3, "Für Elise", "Beethoven", R.drawable.avatar, "originalMusic1.wav")
         )
         filteredList = musicList.toMutableList()
 

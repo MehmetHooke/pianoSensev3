@@ -1,8 +1,8 @@
-package com.example.pianosense;
+package com.example.pianosense
 
 data class NoteInfo(
-    val originalNote: String,
-    val recordedNote: String,
+    val originalNote: String? = null, // Nullable String
+    val recordedNote: String? = null, // Nullable String
     val timestamp: Double,
     val isCorrect: Boolean
 )
