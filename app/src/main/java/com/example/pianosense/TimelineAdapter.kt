@@ -7,47 +7,31 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
-class TimelineAdapter(private var notes: List<NoteInfo>) :
-    RecyclerView.Adapter<TimelineAdapter.NoteViewHolder>() {
+class TimelineAdapter(private var data: List<ComparisonResult>) : RecyclerView.Adapter<TimelineAdapter.ViewHolder>() {
 
-    class NoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val noteTextView: TextView = itemView.findViewById(R.id.noteTextView)
-        val timestampTextView : TextView = itemView.findViewById(R.id.timestampTextView)
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val originalNoteTextView: TextView = view.findViewById(R.id.originalNoteTextView)
+        val recordedNoteTextView: TextView = view.findViewById(R.id.recordedNoteTextView)
+        val isCorrectTextView: TextView = view.findViewById(R.id.isCorrectTextView)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NoteViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_note, parent, false)
-        return NoteViewHolder(view)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_note, parent, false)
+        return ViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
-        val noteInfo = notes[position]
-        val formattedTimestamp = formatTimestamp(noteInfo.timestamp)
-        holder.noteTextView.text = "${noteInfo.recordedNote}"
-        holder.timestampTextView.text = "Time: $formattedTimestamp"
-
-        if (noteInfo.isCorrect) {
-            holder.noteTextView.setBackgroundResource(R.color.green)
-        } else {
-            holder.noteTextView.setBackgroundResource(R.color.red)
-        }
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = data[position]
+        holder.originalNoteTextView.text = item.originalNote.toString() // NoteInfo'yu String'e çevirir
+        holder.recordedNoteTextView.text = item.recordedNote.toString()
+        holder.isCorrectTextView.text = if (item.isCorrect) "Correct" else "Wrong"
     }
 
+    override fun getItemCount(): Int = data.size
 
-    override fun getItemCount(): Int {
-        return notes.size
-    }
-
-    fun formatTimestamp(timestamp: Double): String {
-        val seconds = timestamp
-        return String.format("%.2f s", seconds)
-    }
-
-
-    // Listeyi güncellemek için bir yöntem ekleyin
-    fun updateList(newNotes: List<NoteInfo>) {
-        notes = newNotes
+    fun updateData(newData: List<ComparisonResult>) {
+        data = newData
         notifyDataSetChanged()
     }
 }
+

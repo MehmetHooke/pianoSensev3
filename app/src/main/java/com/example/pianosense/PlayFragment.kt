@@ -39,6 +39,8 @@ class PlayFragment : Fragment() {
 
     private lateinit var audioRecorder: AudioRecord
     private var isRecording = false
+    private var isPlayingSong = true
+    private var isPlayingRecord = true
     private lateinit var audioFilePath: String
     private val soundAnalysisService by lazy { SoundAnalysisService(requireContext()) }
     private  var mediaPlayer: MediaPlayer? = null
@@ -67,6 +69,7 @@ class PlayFragment : Fragment() {
         val startRecordButton = view.findViewById<Button>(R.id.startRecordButton)
         val listenRecordButton = view.findViewById<Button>(R.id.listenRecord)
         val resultsButton = view.findViewById<Button>(R.id.resultsButton)
+        val playMusicButton = view.findViewById<Button>(R.id.playMusicButton)
 
         musicViewModel.selectedMusic.observe(viewLifecycleOwner) { music ->
             if (music != null) {
@@ -102,16 +105,58 @@ class PlayFragment : Fragment() {
 
                 // Dosyanın varlığını kontrol et
                 val wavFile = File(wavFilePath)
-                if (wavFile.exists()) {
-                    playRecordedAudio(wavFilePath) // Dosya oynatılır
-                } else {
-                    Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
+                if(isPlayingRecord){
+                    if (wavFile.exists()) {
+                        playRecordedAudio(wavFilePath) // Dosya oynatılır
+                        isPlayingRecord = false
+                    } else {
+                        Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
+                    }
+                }else{
+                    stopAudioPlayback()
+                    isPlayingRecord = true
+
                 }
+
             } catch (e: IOException) {
                 Log.e("PlayFragment", "Error playing asset file", e)
                 Toast.makeText(requireContext(), "Error playing test file", Toast.LENGTH_SHORT).show()
             }
         }
+
+        playMusicButton.setOnClickListener{
+
+
+            try {
+                // İndirilenler klasörünün yolu
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString()
+
+                // Kaydedilen dosyanın tam yolu (indirilenler klasöründe "recording.wav")
+                val wavFilePath = "$downloadsDir/tempOriginalMusic.wav"
+
+                // Dosyanın varlığını kontrol et
+                val wavFile = File(wavFilePath)
+                if(isPlayingSong){
+                    if (wavFile.exists()) {
+                        playRecordedAudio(wavFilePath) // Dosya oynatılır
+                        isPlayingSong = false
+                    } else {
+                        Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
+                    }
+                }else{
+                    stopAudioPlayback()
+                    isPlayingSong = true
+
+                }
+            } catch (e: IOException) {
+                Log.e("PlayFragment", "Error playing asset file", e)
+                Toast.makeText(requireContext(), "Error playing test file", Toast.LENGTH_SHORT).show()
+            }
+
+        }
+
+
+
 
         resultsButton.setOnClickListener {
 
@@ -156,7 +201,7 @@ class PlayFragment : Fragment() {
                     val comparisonResults = soundAnalysisService.comparePcmFiles(originalPcmFile.absolutePath, recordedPcmFile.absolutePath)
 
                     try {
-                        // Notaları zaman damgasına göre filtrele (0.5 saniyeden kısa zaman farklarını kaldır)
+                        // comparisonResults zaten ComparisonResult tipi olduğu için doğrudan kullanılabilir
                         val filteredResults = filterNotesByTimestamp(
                             comparisonResults.map { comparisonResult ->
                                 NoteInfo(
@@ -174,6 +219,8 @@ class PlayFragment : Fragment() {
                         Log.e("PlayFragment", "Error transforming results", e)
                         Toast.makeText(requireContext(), "Error processing analysis results", Toast.LENGTH_SHORT).show()
                     }
+
+
 
                     // Sonuçları gösterecek fragment'e geçiş yap
                     requireActivity().supportFragmentManager.beginTransaction()
@@ -340,8 +387,8 @@ class PlayFragment : Fragment() {
 
     private fun compareAudioFiles(originalMusicPath: String, recordedWavPath: String): List<NoteInfo> {
         val soundAnalysisService = SoundAnalysisService(requireContext())
-        val originalNotes = soundAnalysisService.analyzeWavFile(originalMusicPath)
-        val recordedNotes = soundAnalysisService.analyzeWavFile(recordedWavPath)
+        val originalNotes = soundAnalysisService.analyzeWavFile(originalMusicPath,true)
+        val recordedNotes = soundAnalysisService.analyzeWavFile(recordedWavPath,false)
 
         val comparisonList = mutableListOf<NoteInfo>()
 

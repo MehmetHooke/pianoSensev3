@@ -127,84 +127,78 @@ public class SoundAnalysisService {
         this.context = context;
     }
 
-    public List<NoteInfo> analyzeWavFile(String wavFilePath) {
+    public List<NoteInfo> analyzeWavFile(String wavFilePath,boolean isOriginal) {
         List<NoteInfo> noteInfoList = new ArrayList<>();
-
         try {
-            // PCM dosyası için geçici bir yol oluştur
+            // PCM dosyası oluştur
             File pcmFile = new File(context.getCacheDir(), "temp_audio.pcm");
             String pcmFilePath = pcmFile.getAbsolutePath();
 
-            // WAV -> PCM dönüştürme
-            boolean conversionSuccess = convertWavToPcm(wavFilePath, pcmFilePath);
-            if (!conversionSuccess) {
-                Log.e(TAG, "Failed to convert WAV to PCM");
-                return noteInfoList;
-            }
+            // WAV -> PCM dönüşümünü senkronize yap
+            int result = FFmpeg.execute(new String[]{
+                    "-y", "-i", wavFilePath, "-f", "s16le", "-ac", "1", "-ar", "44100", pcmFilePath
+            });
 
-            // PCM dosyasını analiz et
-            analyzePcmFile(pcmFilePath, noteInfoList);
+            if (result == Config.RETURN_CODE_SUCCESS) {
+                Log.d(TAG, "PCM conversion successful");
+                analyzePcmFile(pcmFilePath, noteInfoList,isOriginal);
+            } else {
+                Log.e(TAG, "PCM conversion failed");
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error analyzing WAV file", e);
         }
-
         return noteInfoList;
     }
 
 
 
-//çalışan hali
-private void analyzePcmFile(String pcmFilePath, List<NoteInfo> noteInfoList) {
-    try {
-        FileInputStream fileInputStream = new FileInputStream(pcmFilePath);
+    //çalışan hali
+    private void analyzePcmFile(String pcmFilePath, List<?> noteInfoList, boolean isOriginal) {
+        try {
+            FileInputStream fileInputStream = new FileInputStream(pcmFilePath);
 
-        // PCM formatını manuel olarak tanımlayın
-        TarsosDSPAudioFormat format = new TarsosDSPAudioFormat(
-                44100, // örnekleme hızı
-                16,    // bit derinliği
-                1,     // kanal sayısı (mono)
-                true,  // signed (işaretli mi?)
-                false  // big-endian (big-endian değil)
-        );
+            TarsosDSPAudioFormat format = new TarsosDSPAudioFormat(
+                    44100,  // Örnekleme hızı
+                    16,     // Bit derinliği
+                    1,      // Kanal sayısı (mono)
+                    true,   // İşaretli mi
+                    false   // Big-endian değil
+            );
 
-        // UniversalAudioInputStream'e formatı geçirin
-        UniversalAudioInputStream audioInputStream = new UniversalAudioInputStream(fileInputStream, format);
+            UniversalAudioInputStream audioInputStream = new UniversalAudioInputStream(fileInputStream, format);
+            AudioDispatcher dispatcher = new AudioDispatcher(audioInputStream, 1024, 512);
 
-        // AudioDispatcher oluşturun
-        AudioDispatcher dispatcher = new AudioDispatcher(audioInputStream, 1024, 512);
+            dispatcher.addAudioProcessor(new PitchProcessor(
+                    PitchProcessor.PitchEstimationAlgorithm.YIN,
+                    44100f,
+                    1024,
+                    (pitchDetectionResult, audioEvent) -> {
+                        float pitchInHz = pitchDetectionResult.getPitch();
+                        if (pitchInHz > 0) {
+                            String closestNote = findClosestNoteJava(pitchInHz);
+                            double timestamp = audioEvent.getTimeStamp();
 
-        // PitchProcessor ekleyin
-        dispatcher.addAudioProcessor(new PitchProcessor(
-                PitchProcessor.PitchEstimationAlgorithm.YIN,
-                44100f,
-                1024,
-                (pitchDetectionResult, audioEvent) -> {
-                    float pitchInHz = pitchDetectionResult.getPitch();
-                    if (pitchInHz > 0) {
-                        String closestNote = findClosestNoteJava(pitchInHz);
-                        double timestamp = audioEvent.getTimeStamp();
-                        NoteInfo noteInfo = new NoteInfo(closestNote, closestNote, timestamp, true);
-                        noteInfoList.add(noteInfo);
-
-                        // Notayı log'a yazdır
-
-                        Log.d(TAG, "Detected note: " + noteInfo.toString());
+                            // Veriyi doğru listeye ekle
+                            if (isOriginal) {
+                                OriginalNoteInfo note = new OriginalNoteInfo(closestNote, timestamp);
+                                ((List<OriginalNoteInfo>) noteInfoList).add(note);
+                                Log.d("SoundAnalysis", "Original Note Detected: " + note.toString());
+                            } else {
+                                RecordedNoteInfo note = new RecordedNoteInfo(closestNote, timestamp);
+                                ((List<RecordedNoteInfo>) noteInfoList).add(note);
+                                Log.d("SoundAnalysis", "Recorded Note Detected: " + note.toString());
+                            }
+                        }
                     }
-                }
-        ));
+            ));
 
-        dispatcher.run();
-
-        // Tüm analiz sonuçlarını log'a yazdır
-        Log.d(TAG, "Analysis completed. Notes:");
-        for (NoteInfo note : noteInfoList) {
-            Log.d(TAG, note.toString());
+            dispatcher.run();
+        } catch (Exception e) {
+            Log.e("SoundAnalysisService", "PCM dosya analizi sırasında hata oluştu", e);
         }
-
-    } catch (Exception e) {
-        Log.e(TAG, "Error analyzing PCM file", e);
     }
-}
+
 
 
 
@@ -219,17 +213,9 @@ private void analyzePcmFile(String pcmFilePath, List<NoteInfo> noteInfoList) {
                 outputPcmPath
         };
 
-        // Asenkron FFmpeg çalıştırma
-        FFmpeg.executeAsync(command, new ExecuteCallback() {
-            @Override
-            public void apply(long executionId, int returnCode) {
-                if (returnCode == 0) {
-                    Log.d(TAG, "PCM conversion successful: " + outputPcmPath);
-                } else {
-                    Log.e(TAG, "PCM conversion failed. Return code: " + returnCode);
-                }
-            }
-        });
+        // senkron FFmpeg çalıştırma
+        FFmpeg.execute(command);
+
 
         return true; // Dönüşümün asenkron olduğu için sadece işlem başlatıldığına dair bilgi döner
     }
@@ -237,39 +223,46 @@ private void analyzePcmFile(String pcmFilePath, List<NoteInfo> noteInfoList) {
 
 
     public List<ComparisonResult> comparePcmFiles(String originalPcmPath, String recordedPcmPath) {
-        List<NoteInfo> originalNotes = new ArrayList<>();
-        List<NoteInfo> recordedNotes = new ArrayList<>();
+        List<OriginalNoteInfo> originalNotes = new ArrayList<>();
+        List<RecordedNoteInfo> recordedNotes = new ArrayList<>();
         List<ComparisonResult> comparisonResults = new ArrayList<>();
 
         try {
             // Orijinal PCM dosyasını analiz et
-            analyzePcmFile(originalPcmPath, originalNotes);
+            analyzePcmFile(originalPcmPath, originalNotes, true);
 
             // Kaydedilen PCM dosyasını analiz et
-            analyzePcmFile(recordedPcmPath, recordedNotes);
+            analyzePcmFile(recordedPcmPath, recordedNotes, false);
 
-            // İki analiz sonucunu karşılaştır
-            for (NoteInfo originalNote : originalNotes) {
-                NoteInfo closestMatch = null;
+            // Notaları karşılaştır
+            double TOLERANCE = 0.05; // 50 ms tolerans
+
+            for (OriginalNoteInfo originalNote : originalNotes) {
+                RecordedNoteInfo closestMatch = null;
                 double smallestTimeDifference = Double.MAX_VALUE;
 
-                for (NoteInfo recordedNote : recordedNotes) {
+                for (RecordedNoteInfo recordedNote : recordedNotes) {
                     double timeDifference = Math.abs(originalNote.getTimestamp() - recordedNote.getTimestamp());
-                    if (timeDifference < smallestTimeDifference) {
+                    if (timeDifference < smallestTimeDifference && timeDifference <= TOLERANCE) {
                         smallestTimeDifference = timeDifference;
                         closestMatch = recordedNote;
                     }
                 }
 
-                boolean isCorrect = closestMatch != null && originalNote.getOriginalNote().equals(closestMatch.getOriginalNote());
-                comparisonResults.add(new ComparisonResult(originalNote, closestMatch, isCorrect));
+                // Karşılaştırma sonucunu ekle
+                comparisonResults.add(new ComparisonResult(
+                        new NoteInfo(originalNote.getNote(), null, originalNote.getTimestamp(), false),
+                        new NoteInfo(null, closestMatch != null ? closestMatch.getNote() : null, closestMatch != null ? closestMatch.getTimestamp() : 0.0, false),
+                        closestMatch != null && originalNote.getNote().equals(closestMatch.getNote())
+                ));
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error comparing PCM files", e);
+            Log.e("SoundAnalysisService", "PCM dosyaları karşılaştırılırken hata oluştu", e);
         }
 
         return comparisonResults;
     }
+
 
 
 
