@@ -123,12 +123,28 @@ class MainActivity : AppCompatActivity(), OnNextClickListener {
 
     }*/
 
+    fun navigateToPlayFragmentWithMusic(music: Music) {
+        val playFragment = PlayFragment().apply {
+            arguments = Bundle().apply {
+                putString("title", music.title)
+                putString("composer", music.composer)
+                putInt("imageResId", music.imageResId)
+            }
+        }
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, playFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+
+
+
     //yeninavigate fonk
     fun navigateToPlayFragment() {
         val playFragment = PlayFragment()
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, playFragment)
-            .addToBackStack(null)
             .commit()
 
         bottomNavigationView.selectedItemId = R.id.navigation_play

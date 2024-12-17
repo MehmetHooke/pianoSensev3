@@ -37,20 +37,23 @@ class SearchFragment : Fragment() {
         val searchRecyclerView = view.findViewById<RecyclerView>(R.id.searchRecyclerView)
         val suggestedMusics = view.findViewById<TextView>(R.id.suggestedMusics)
 
-        // Müzik listesini tanımlıyoruz
+        // Müzik listesi
         musicList = listOf(
-            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "originalMusic1.wav"),
-            Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
-            Music(3, "Für Elise", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
-            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "originalMusic1.wav"),
-            Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
-            Music(3, "Für Elise", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
-            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "originalMusic1.wav"),
-            Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
-            Music(3, "Für Elise", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
-            Music(1, "Valse", "Evgeny Grinko", R.drawable.avatar, "originalMusic1.wav"),
-            Music(2, "Moonlight Sonata", "Beethoven", R.drawable.avatar, "originalMusic1.wav"),
-            Music(3, "Für Elise", "Beethoven", R.drawable.avatar, "originalMusic1.wav")
+            Music(1, "Moonlight Sonata", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
+            Music(2, "Türk Marşı ", "Mozart", R.drawable.mozart, "mozartturkishmarch.wav"),
+            Music(3, "9. Senfoni", "Bethoven", R.drawable.bethoven, "originalMusic1.wav"),
+            Music(4, "Divenire", "Ludovico Einaudi", R.drawable.ludovico_einaudi, "originalMusic1.wav"),
+            Music(5, "Hit the Road Jack", "Ray Charles", R.drawable.ray_charles, "originalMusic1.wav"),
+            Music(6, "Hold the Line", "Toto", R.drawable.toto, "originalMusic1.wav"),
+            Music(7, "Someone Like You", "Adele", R.drawable.adele, "originalMusic1.wav"),
+            Music(8, "Comptine d’un autre été l’après", "Yann Tiersen", R.drawable.yann_tiersen, "originalMusic1.wav"),
+            Music(9, "Parisienne Moonlight", "Anathema", R.drawable.anathema, "originalMusic1.wav"),
+            Music(10, "İmagine", "John Lennon", R.drawable.john_lennon, "originalMusic1.wav"),
+            Music(11, "Brother John", "Anonim", R.drawable.brother_john, "originalMusic1.wav"),
+            Music(12, "Für Elise", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
+            Music(13, "Valse", "Evegny Grinko", R.drawable.evegny_grinko, "originalMusic1.wav")
+
+
         )
         filteredList = musicList.toMutableList()
 

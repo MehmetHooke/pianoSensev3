@@ -29,4 +29,6 @@
     <string name="scrollable_image">scrollable image</string>
     <string name="listen_music">Listen Music</string>
     <string name="search_icon">Search Music\n</string>
+    <string name="status_icon">Status İcon</string>
+    <string name="music_mage">Music İmage</string>
 </resources>

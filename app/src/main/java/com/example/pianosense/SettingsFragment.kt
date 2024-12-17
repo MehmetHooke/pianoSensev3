@@ -1,6 +1,7 @@
 package com.example.pianosense
 
 import android.Manifest
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -13,6 +14,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -51,21 +53,34 @@ class SettingsFragment : Fragment() {
         val userNameTextViewDetail = view.findViewById<TextView>(R.id.userNameDetail)
         val userEmailTextViewDetail = view.findViewById<TextView>(R.id.userEmailDetail)
 
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            userNameTextView.text = currentUser.displayName ?: "Name Surname"
-            userEmailTextView.text = currentUser.email ?: "example@example.com"
-            userNameTextViewDetail.text = "Name: ${currentUser.displayName ?: "Name Surname"}"
-            userEmailTextViewDetail.text = "Email: ${currentUser.email ?: "example@example.com"}"
-        } else {
-            Toast.makeText(requireContext(), "Kullanıcı bilgisi alınamadı", Toast.LENGTH_SHORT).show()
+// Kullanıcının UID'sini al
+
+
+// Kullanıcının UID'sini al
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val userId = currentUser?.uid
+
+        if (userId != null) {
+            val databaseRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
+            databaseRef.get().addOnSuccessListener { snapshot ->
+                val name = snapshot.child("name").getValue(String::class.java)
+                val email = snapshot.child("email").getValue(String::class.java)
+
+                // Kullanıcı adını ve emaili ekrana göster
+                userNameTextView.text = name ?: "Name Surname"
+                userEmailTextView.text = email ?: currentUser.email
+                userEmailTextViewDetail.text = "Mail: ${email ?: currentUser.email}"
+                userNameTextViewDetail.text = "Name: ${name ?: "Name Surname"}"
+            }.addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to load user data", Toast.LENGTH_SHORT).show()
+            }
         }
 
         val user = auth.currentUser
 
         // Sayfa başlığını ayarla
         val pageTitle = view.findViewById<TextView>(R.id.pageTitle)
-        pageTitle?.text = "Settings Page"
+       pageTitle?.text = "Settings Page"
 
         // Çıkış yapma butonuna eriş ve tıklama olayını ayarla
         val logoutButton = view.findViewById<Button>(R.id.logoutButton)
@@ -104,12 +119,7 @@ class SettingsFragment : Fragment() {
             toggleVisibility(privacyContent)
         }
 
-        // Passwords & Account bölümü
-        val passwordsHeader = view.findViewById<TextView>(R.id.passwordsHeader)
-        val passwordsContent = view.findViewById<View>(R.id.passwordsContent)
-        passwordsHeader.setOnClickListener {
-            toggleVisibility(passwordsContent)
-        }
+
     }
 
     private fun toggleVisibility(content: View) {

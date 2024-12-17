@@ -18,6 +18,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.filters.HighPass;
+import be.tarsos.dsp.filters.LowPassFS;
 import be.tarsos.dsp.io.TarsosDSPAudioFormat;
 import be.tarsos.dsp.io.UniversalAudioInputStream;
 import be.tarsos.dsp.io.android.AudioDispatcherFactory;
@@ -45,6 +47,7 @@ public class SoundAnalysisService {
         noteFrequencies.put("La1", 55.0);
         noteFrequencies.put("La#1", 58.27);
         noteFrequencies.put("Si1", 61.74);
+
         noteFrequencies.put("Do2", 65.41);
         noteFrequencies.put("Do#2", 69.3);
         noteFrequencies.put("Re2", 73.42);
@@ -168,7 +171,8 @@ public class SoundAnalysisService {
             );
 
             UniversalAudioInputStream audioInputStream = new UniversalAudioInputStream(fileInputStream, format);
-            AudioDispatcher dispatcher = new AudioDispatcher(audioInputStream, 1024, 512);
+            AudioDispatcher dispatcher = new AudioDispatcher(audioInputStream, 2048, 1024);
+
 
             // Zaman ve nota karşılaştırma için Wrapper sınıfı
             final AtomicReference<Double> lastTimestamp = new AtomicReference<>(-1.0);
@@ -198,7 +202,7 @@ public class SoundAnalysisService {
                                 } else {
                                     RecordedNoteInfo note = new RecordedNoteInfo(closestNote, formattedTimestamp);
                                     ((List<RecordedNoteInfo>) noteInfoList).add(note);
-                                    //Log.d("SoundAnalysis", "Recorded Note Detected: " + note.toString());
+                                    Log.d("SoundAnalysis Analyze Pcmfile", "Recorded Note Detected: " + note.toString());
                                 }
 
                                 // Zaman damgasını ve notayı güncelle
@@ -219,6 +223,7 @@ public class SoundAnalysisService {
 
 
 
+
     public boolean convertWavToPcm(String inputWavPath, String outputPcmPath) {
         // FFmpeg komutu
         String[] command = {
@@ -234,7 +239,7 @@ public class SoundAnalysisService {
         FFmpeg.execute(command);
 
 
-        return true; // Dönüşümün asenkron olduğu için sadece işlem başlatıldığına dair bilgi döner
+        return true; // Dönüşümün senkron olduğu için sadece işlem başlatıldığına dair bilgi döner
     }
 
 
@@ -260,7 +265,7 @@ public class SoundAnalysisService {
             }
 
             // Notaları karşılaştır
-            double TOLERANCE = 0.1; // 50 ms tolerans
+            double TOLERANCE = 1; // 50 ms tolerans
 
             for (OriginalNoteInfo originalNote : originalNotes) {
                 RecordedNoteInfo closestMatch = null;
@@ -320,19 +325,41 @@ public class SoundAnalysisService {
         String closestNote = "";
         double smallestDifference = Double.MAX_VALUE;
 
+        // Tolerans (eşik değeri) belirliyoruz
+        final double TOLERANCE = 2.0; // Hz cinsinden, ayarlanabilir
+
+        // Frekanslara göre en yakın notayı bulma
         for (Map.Entry<String, Double> entry : noteFrequencies.entrySet()) {
             double noteFrequency = entry.getValue();
             String note = entry.getKey();
 
+            // Mutlak farkı hesapla
             double difference = Math.abs(noteFrequency - frequency);
-            if (difference < smallestDifference) {
+
+            // Eğer fark küçükse ve eşik değerini geçmiyorsa
+            if (difference < smallestDifference && difference <= TOLERANCE) {
                 smallestDifference = difference;
                 closestNote = note;
             }
         }
 
+        // Eğer hala uygun bir nota bulunmadıysa, küçük toleransla en yakınını seç
+        if (closestNote.isEmpty()) {
+            for (Map.Entry<String, Double> entry : noteFrequencies.entrySet()) {
+                double noteFrequency = entry.getValue();
+                String note = entry.getKey();
+
+                double difference = Math.abs(noteFrequency - frequency);
+                if (difference < smallestDifference) {
+                    smallestDifference = difference;
+                    closestNote = note;
+                }
+            }
+        }
+
         return closestNote;
     }
+
 
 
 }

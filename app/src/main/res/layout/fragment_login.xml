@@ -1,7 +1,7 @@
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:fillViewport="true"> <!-- İçeriği genişliğe ve yüksekliğe göre doldurur -->
 
     <RelativeLayout
@@ -69,7 +69,7 @@
         <EditText
             android:id="@+id/passwordEditText"
             android:fontFamily="sans-serif"
-            android:drawableEnd="@drawable/lock"
+
             android:paddingEnd="10dp"
             android:background="@drawable/rounded_login"
             android:layout_width="match_parent"
@@ -94,7 +94,7 @@
             android:background="@drawable/rounded_button"
             android:drawableEnd="@drawable/ic_arrow_right_only"
             android:layout_below="@id/passwordEditText"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="35dp"
             android:padding="10dp" />
 
         <Button
@@ -116,27 +116,52 @@
 
         <TextView
             android:id="@+id/rememberText"
-            android:layout_width="wrap_content"
+            android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:layout_below="@+id/googleSignInButton"
-            android:layout_alignParentStart="true"
-            android:layout_marginStart="85dp"
             android:layout_marginTop="48dp"
+            android:layout_marginEnd="14dp"
             android:layout_marginBottom="35dp"
+            android:layout_toStartOf="@+id/registerText"
             android:text="New Member?" />
 
         <TextView
             android:id="@+id/registerText"
-            android:layout_width="wrap_content"
+            android:layout_width="108dp"
             android:layout_height="wrap_content"
             android:layout_below="@+id/googleSignInButton"
-            android:layout_marginStart="10dp"
-            android:layout_marginTop="48dp"
-            android:layout_marginEnd="45dp"
-            android:layout_toEndOf="@+id/rememberText"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="49dp"
+            android:layout_marginEnd="59dp"
             android:text="Register now"
             android:textColor="@color/btncolor"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/forgotPasswordText"
+            android:layout_width="160dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/googleSignInButton"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="-143dp"
+            android:layout_marginEnd="10dp"
+            android:text="Forgot Password?"
+            android:textAlignment="textEnd"
+            android:textColor="@color/btncolor"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/closeİmageView"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_alignEnd="@+id/passwordEditText"
+            android:layout_alignBottom="@id/passwordEditText"
+            android:layout_marginStart="-40dp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="10dp"
+            android:layout_toEndOf="@id/passwordEditText"
+            app:srcCompat="@drawable/closedeye" />
+
 
     </RelativeLayout>
 </ScrollView>

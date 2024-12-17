@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "4476239227",
+    "firebase_url": "https://pianosenseapp-default-rtdb.firebaseio.com",
     "project_id": "pianosenseapp",
     "storage_bucket": "pianosenseapp.firebasestorage.app"
   },

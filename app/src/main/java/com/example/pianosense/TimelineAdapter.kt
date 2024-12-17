@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.util.*
@@ -15,6 +16,7 @@ class TimelineAdapter(private var data: List<ComparisonResult>) : RecyclerView.A
         val recordedNoteTextView: TextView = view.findViewById(R.id.recordedNoteTextView)
         val timestampTextView: TextView = view.findViewById(R.id.timestampTextView)
         val isCorrectTextView: TextView = view.findViewById(R.id.isCorrectTextView)
+        val statusImageView: ImageView = view.findViewById(R.id.statusImageView)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -32,6 +34,15 @@ class TimelineAdapter(private var data: List<ComparisonResult>) : RecyclerView.A
         holder.isCorrectTextView.setTextColor(
             if (result.isCorrect) Color.parseColor("#4CAF50") else Color.parseColor("#F44336")
         )
+
+        // Simgeyi ayarla
+        if (result.isCorrect) {
+            holder.statusImageView.setImageResource(R.drawable.check_small)
+            holder.statusImageView.visibility = View.VISIBLE
+        } else {
+            holder.statusImageView.setImageResource(R.drawable.close)
+            holder.statusImageView.visibility = View.VISIBLE
+        }
     }
 
 

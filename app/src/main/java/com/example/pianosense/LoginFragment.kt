@@ -2,11 +2,13 @@ package com.example.pianosense
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -21,6 +23,7 @@ class LoginFragment : Fragment() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
+    private var isPasswordVisible = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -34,12 +37,36 @@ class LoginFragment : Fragment() {
 
         auth = FirebaseAuth.getInstance()
 
+        val passwordToggle = view.findViewById<ImageView>(R.id.closeİmageView)
+        val forgotPassword= view.findViewById<TextView>(R.id.forgotPasswordText)
         val registerTextView = view.findViewById<TextView>(R.id.registerText)
         val emailEditText = view.findViewById<EditText>(R.id.emailEditText)
         val passwordEditText = view.findViewById<EditText>(R.id.passwordEditText)
         val loginButton = view.findViewById<Button>(R.id.loginButton)
         val googleSignInButton = view.findViewById<Button>(R.id.googleSignInButton) // Google ile giriş butonu
 
+
+        passwordToggle.setOnClickListener {
+            isPasswordVisible = !isPasswordVisible
+            if (isPasswordVisible) {
+                passwordEditText.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                passwordToggle.setImageResource(R.drawable.open_eye)
+            } else {
+                passwordEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                passwordToggle.setImageResource(R.drawable.closedeye)
+            }
+            // Cursor pozisyonunun bozulmaması için:
+            passwordEditText.setSelection(passwordEditText.text.length)
+        }
+
+
+        //şifremi unuttum ekranına geçiş
+        forgotPassword.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, ForgotPasswordFragment())
+                .addToBackStack(null)
+                .commit()
+        }
 
         // Google Sign-In seçeneklerini yapılandırın
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)

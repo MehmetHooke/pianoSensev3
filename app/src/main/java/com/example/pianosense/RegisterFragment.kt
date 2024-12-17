@@ -1,5 +1,6 @@
 package com.example.pianosense
 
+import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,7 @@ import androidx.fragment.app.Fragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.database.FirebaseDatabase
 
 class RegisterFragment : Fragment() {
 
@@ -44,8 +46,15 @@ class RegisterFragment : Fragment() {
             val phone = phoneEditText.text.toString().trim()
             val password = passwordEditText.text.toString().trim()
 
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            val userId = currentUser?.uid ?: "default_user"
+
+            val sharedPref = requireActivity().getSharedPreferences("UserPreferences", MODE_PRIVATE)
+            sharedPref.edit().putString("user_name_$userId", fullName).apply()
+
+
             if (email.isNotEmpty() && password.isNotEmpty() && termsCheckBox.isChecked) {
-                registerUser(email, password)
+                registerUser(email, password,fullName,phone)
             } else {
                 Toast.makeText(requireContext(), "Please fill all fields and agree to terms", Toast.LENGTH_SHORT).show()
             }
@@ -53,7 +62,7 @@ class RegisterFragment : Fragment() {
     }
 
     // Kullanıcı kaydı ve doğrulama e-postası gönderme
-    private fun registerUser(email: String, password: String) {
+    private fun registerUser(email: String, password: String,fullname: String,phone: String) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(requireActivity()) { task ->
                 if (task.isSuccessful) {
@@ -61,6 +70,29 @@ class RegisterFragment : Fragment() {
                     auth.currentUser?.sendEmailVerification()
                         ?.addOnCompleteListener { verifyTask ->
                             if (verifyTask.isSuccessful) {
+                                //yeni
+                                val user = FirebaseAuth.getInstance().currentUser
+                                val userId = user?.uid
+
+                                // Firebase Realtime Database'e kullanıcı adını kaydet
+                                val databaseRef = FirebaseDatabase.getInstance().getReference("users")
+                                val userMap = HashMap<String, String>()
+                                userMap["name"] = fullname
+                                userMap["email"] = email
+                                userMap["phone"] = phone
+
+                                userId?.let {
+                                    databaseRef.child(it).setValue(userMap).addOnCompleteListener { dbTask ->
+                                        if (dbTask.isSuccessful) {
+                                            Toast.makeText(requireContext(), "Registration Successful", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(requireContext(), "Database Error: ${dbTask.exception?.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+
+
+
                                 Toast.makeText(requireContext(), "Registration successful! Please check your email for verification.", Toast.LENGTH_LONG).show()
                                 // Kayıt işlemi başarılı olduğunda LoginFragment'e dön
                                 parentFragmentManager.beginTransaction()

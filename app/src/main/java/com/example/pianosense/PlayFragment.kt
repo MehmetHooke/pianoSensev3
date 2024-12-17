@@ -24,6 +24,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 
 import java.io.File
@@ -39,11 +44,26 @@ class PlayFragment : Fragment() {
 
     private lateinit var audioRecorder: AudioRecord
     private var isRecording = false
-    private var isPlayingSong = true
+    private var isPlayingSong = false
     private var isPlayingRecord = true
     private lateinit var audioFilePath: String
     private val soundAnalysisService by lazy { SoundAnalysisService(requireContext()) }
     private  var mediaPlayer: MediaPlayer? = null
+
+    private val database = FirebaseDatabase.getInstance()
+    private val auth = FirebaseAuth.getInstance()
+
+    private lateinit var saveButton: Button
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        if (arguments != null && arguments?.getSerializable("music") != null) {
+            val music = arguments?.getSerializable("music") as Music
+            musicViewModel.setSelectedMusic(music)
+        }
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -51,6 +71,8 @@ class PlayFragment : Fragment() {
     ): View? {
         return inflater.inflate(R.layout.fragment_play, container, false)
     }
+
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -62,6 +84,7 @@ class PlayFragment : Fragment() {
             REQUEST_RECORD_AUDIO_PERMISSION
         )
 
+        saveButton = view.findViewById(R.id.saveButton)
 
         val musicTitleTextView = view.findViewById<TextView>(R.id.musicTitle)
         val musicComposerTextView = view.findViewById<TextView>(R.id.musicComposer)
@@ -71,29 +94,88 @@ class PlayFragment : Fragment() {
         val resultsButton = view.findViewById<Button>(R.id.resultsButton)
         val playMusicButton = view.findViewById<Button>(R.id.playMusicButton)
 
+
+        musicViewModel.selectedMusic.observe(viewLifecycleOwner) { music ->
+            if (music != null) {
+                checkIfMusicIsSaved(music) { isSaved ->
+                    updateSaveButtonState(saveButton, isSaved)
+                }
+            }
+        }
+
+
         musicViewModel.selectedMusic.observe(viewLifecycleOwner) { music ->
             if (music != null) {
                 musicTitleTextView.text = music.title
                 musicComposerTextView.text = music.composer
-                musicSheetImageView.setImageResource(R.drawable.avatar)
+                musicSheetImageView.setImageResource(music.imageResId)
                 Log.d("PlayFragment", "Displaying music: \${music.title}, Composer: \${music.composer}")
 
             }
         }
+        musicViewModel.selectedMusic.observe(viewLifecycleOwner) { music ->
+            if (music != null) {
+                musicTitleTextView.text = music.title
+                musicComposerTextView.text = music.composer
+                musicSheetImageView.setImageResource(music.imageResId)
+
+                // Firebase'de müzik olup olmadığını kontrol et ve Save Button'u güncelle
+                checkIfMusicIsSaved(music) { isSaved ->
+                    updateSaveButtonState(saveButton, isSaved)
+                }
+            }
+        }
+
+
+        // Save Button'a tıklama olayını burada tanımlayın
+        saveButton.setOnClickListener {
+            musicViewModel.selectedMusic.value?.let { currentMusic ->
+                saveOrRemoveMusic(currentMusic)
+            } ?: run {
+                Toast.makeText(requireContext(), "No music to save or remove", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+
+
+
 
         startRecordButton.setOnClickListener {
             if (checkMicrophonePermission()) {
                 if (isRecording) {
                     stopRecording()
                     startRecordButton.text = "Start Recording"
+                    requireActivity().runOnUiThread {
+                        playMusicButton.setBackgroundResource(R.drawable.rounded_button1)
+                    }
+
+                    // Mic simgesini geri yükle
+                    startRecordButton.setCompoundDrawablesWithIntrinsicBounds(
+                        R.drawable.mic, // Sol taraftaki drawable
+                        0, // Üst taraftaki drawable
+                        0, // Sağ taraftaki drawable
+                        0  // Alt taraftaki drawable
+                    )
                 } else {
                     startRecording()
                     startRecordButton.text = "Stop Recording"
+                    // Pause simgesini göster
+                    requireActivity().runOnUiThread {
+                        playMusicButton.setBackgroundResource(R.drawable.rounded_button_red)
+                    }
+
+                    startRecordButton.setCompoundDrawablesWithIntrinsicBounds(
+                        R.drawable.pause, // Sol taraftaki drawable
+                        0, // Üst taraftaki drawable
+                        0, // Sağ taraftaki drawable
+                        0  // Alt taraftaki drawable
+                    )
                 }
             } else {
                 requestMicrophonePermission()
             }
         }
+
 
         listenRecordButton.setOnClickListener {
             try {
@@ -103,18 +185,34 @@ class PlayFragment : Fragment() {
                 // Kaydedilen dosyanın tam yolu (indirilenler klasöründe "recording.wav")
                 val wavFilePath = "$downloadsDir/recording.wav"
 
+
                 // Dosyanın varlığını kontrol et
                 val wavFile = File(wavFilePath)
                 if(isPlayingRecord){
                     if (wavFile.exists()) {
                         playRecordedAudio(wavFilePath) // Dosya oynatılır
                         isPlayingRecord = false
+                        listenRecordButton.text = "Stop Listening"
+                        listenRecordButton.setCompoundDrawablesWithIntrinsicBounds(
+                            R.drawable.pause, // Sol taraftaki drawable
+                            0, // Üst taraftaki drawable
+                            0, // Sağ taraftaki drawable
+                            0  // Alt taraftaki drawable
+                        )
                     } else {
                         Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
+
                     }
                 }else{
                     stopAudioPlayback()
                     isPlayingRecord = true
+                    listenRecordButton.text = "Start Listening"
+                    listenRecordButton.setCompoundDrawablesWithIntrinsicBounds(
+                        R.drawable.ic_play_white, // Sol taraftaki drawable
+                        0, // Üst taraftaki drawable
+                        0, // Sağ taraftaki drawable
+                        0  // Alt taraftaki drawable
+                    )
 
                 }
 
@@ -124,36 +222,77 @@ class PlayFragment : Fragment() {
             }
         }
 
-        playMusicButton.setOnClickListener{
+        playMusicButton.setOnClickListener {
+            musicViewModel.selectedMusic.value?.let { selectedMusic ->
+                try {
+                    // Assets klasöründen müzik dosyasını alma
+                    val assetFileName = selectedMusic.audioFilePath // Music nesnesindeki dosya adı
 
-
-            try {
-                // İndirilenler klasörünün yolu
-                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString()
-
-                // Kaydedilen dosyanın tam yolu (indirilenler klasöründe "recording.wav")
-                val wavFilePath = "$downloadsDir/tempOriginalMusic.wav"
-
-                // Dosyanın varlığını kontrol et
-                val wavFile = File(wavFilePath)
-                if(isPlayingSong){
-                    if (wavFile.exists()) {
-                        playRecordedAudio(wavFilePath) // Dosya oynatılır
+                    if (isPlayingSong) {
+                        // Zaten oynuyorsa durdur
+                        stopAudioPlayback()
                         isPlayingSong = false
+                        playMusicButton.text = "Listen Music"
+                        playMusicButton.setCompoundDrawablesWithIntrinsicBounds(
+                            R.drawable.ic_play_white, // Sol taraftaki drawable
+                            0, 0, 0 // Diğer drawable'lar
+                        )
+
+
                     } else {
-                        Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
+                        // Çalmıyorsa başlat
+                        // MediaPlayer serbest bırak ve yeniden başlat
+                        mediaPlayer?.release()
+                        mediaPlayer = MediaPlayer().apply {
+                            val assetFileDescriptor = requireContext().assets.openFd(assetFileName)
+                            setDataSource(
+                                assetFileDescriptor.fileDescriptor,
+                                assetFileDescriptor.startOffset,
+                                assetFileDescriptor.length
+                            )
+                            prepare()
+                            start()
+                        }
+
+                        // Başlatma durumunu güncelle
+                        isPlayingSong = true
+                        playMusicButton.text = "Stop Listening"
+
+                        playMusicButton.setCompoundDrawablesWithIntrinsicBounds(
+                            R.drawable.pause, // Sol taraftaki drawable
+                            0, 0, 0 // Diğer drawable'lar
+                        )
+
+
+
+
+                        // Çalma tamamlandığında durumu sıfırla
+                        mediaPlayer?.setOnCompletionListener {
+                            isPlayingSong = false
+                            playMusicButton.text = "Listen Music"
+                            playMusicButton.setCompoundDrawablesWithIntrinsicBounds(
+                                R.drawable.ic_play_white, // Sol taraftaki drawable
+                                0, 0, 0 // Diğer drawable'lar
+                            )
+
+
+
+                        }
                     }
-                }else{
-                    stopAudioPlayback()
-                    isPlayingSong = true
-
+                } catch (e: IOException) {
+                    Log.e("PlayFragment", "Error playing music from assets", e)
+                    Toast.makeText(
+                        requireContext(),
+                        "Error playing selected music",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-            } catch (e: IOException) {
-                Log.e("PlayFragment", "Error playing asset file", e)
-                Toast.makeText(requireContext(), "Error playing test file", Toast.LENGTH_SHORT).show()
+            } ?: run {
+                // Eğer seçili müzik yoksa
+                Toast.makeText(requireContext(), "No music selected", Toast.LENGTH_SHORT).show()
             }
-
         }
+
 
 
 
@@ -175,13 +314,21 @@ class PlayFragment : Fragment() {
                 }
                 Log.d("PlayFragment", "Orijinal dosya Downloads klasörüne kopyalandı: ${originalWavFile.absolutePath}")
 
-                // Kaydedilen müzik dosyasını Downloads klasörüne kopyala
-                val recordedInputStream = assetManager.open("test.wav")
-                val recordedWavFile = File(downloadsDir, "tempRecordedMusic.wav")
-                if (!recordedWavFile.exists()) {
-                    FileOutputStream(recordedWavFile).use { outputStream ->
-                        recordedInputStream.copyTo(outputStream)
+
+                // Kaydedilen müzik dosyasını tanımla
+                val recordedWavFile = File(downloadsDir, "recording.wav")
+                val tempRecordedWavFile = File(downloadsDir, "tempRecordedMusic.wav")
+
+                if (recordedWavFile.exists()) {
+                    // Yeni dosyayı üzerine yaz
+                    FileOutputStream(tempRecordedWavFile, false).use { outputStream ->
+                        recordedWavFile.inputStream().use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
                     }
+                    Log.d("FileCopy", "Recorded WAV file copied to temp: ${tempRecordedWavFile.absolutePath}")
+                } else {
+                    Log.e("FileCopy", "Recorded WAV file not found in downloads directory.")
                 }
                 Log.d("PlayFragment", "Kaydedilen dosya Downloads klasörüne kopyalandı: ${recordedWavFile.absolutePath}")
 
@@ -193,6 +340,8 @@ class PlayFragment : Fragment() {
                 val soundAnalysisService = SoundAnalysisService(requireContext())
                 val originalConverted = soundAnalysisService.convertWavToPcm(originalWavFile.absolutePath, originalPcmFile.absolutePath)
                 val recordedConverted = soundAnalysisService.convertWavToPcm(recordedWavFile.absolutePath, recordedPcmFile.absolutePath)
+
+
 
                 if (originalConverted && recordedConverted) {
                     Log.d("SoundAnalysisService", "PCM donusumleri basarili")
@@ -239,6 +388,86 @@ class PlayFragment : Fragment() {
 
 
     }
+
+
+    override fun onResume() {
+        super.onResume()
+        musicViewModel.selectedMusic.value?.let { music ->
+            Log.d("PlayFragment", "onResume: Checking save state for music: ${music.id}")
+            checkIfMusicIsSaved(music) { isSaved ->
+                Log.d("PlayFragment", "onResume: Save state is $isSaved")
+                updateSaveButtonState(saveButton, isSaved)
+            }
+        }
+    }
+
+    // Firebase'e müzik kaydetme fonksiyonu
+    private fun saveOrRemoveMusic(music: Music) {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            val userId = currentUser.uid
+            val databaseRef = database.getReference("users").child(userId).child("saved_music")
+
+            databaseRef.orderByChild("id").equalTo(music.id.toDouble()).addListenerForSingleValueEvent(object :
+                ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        // Eğer müzik zaten kayıtlıysa, kullanıcıdan silme onayı iste
+                        showRemoveConfirmationDialog(music, snapshot)
+                    } else {
+                        // Eğer müzik kayıtlı değilse, kaydet
+                        databaseRef.push().setValue(music)
+                            .addOnSuccessListener {
+                                Toast.makeText(requireContext(), "Music saved successfully!", Toast.LENGTH_SHORT).show()
+                                updateSaveButtonState(saveButton, true) // Butonu "Saved" durumuna getir
+                            }
+                            .addOnFailureListener { exception ->
+                                Log.e("Firebase", "Failed to save music: ${exception.message}", exception)
+                                Toast.makeText(requireContext(), "Failed to save music", Toast.LENGTH_SHORT).show()
+                            }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Firebase", "Database error: ${error.message}", error.toException())
+                    Toast.makeText(requireContext(), "Error checking music in Firebase", Toast.LENGTH_SHORT).show()
+                }
+            })
+        } else {
+            Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showRemoveConfirmationDialog(music: Music, snapshot: DataSnapshot) {
+        val alertDialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Müzik Zaten Kaydedilmiş")
+            .setMessage("Bu müzik zaten kaydedilmiş. Silmek istediğinize emin misiniz?")
+            .setPositiveButton("Evet") { _, _ ->
+                // Eğer kullanıcı silmeyi onaylarsa, müzik silinir
+                for (child in snapshot.children) {
+                    child.ref.removeValue().addOnSuccessListener {
+                        Toast.makeText(requireContext(), "Music removed successfully!", Toast.LENGTH_SHORT).show()
+                        updateSaveButtonState(saveButton, false) // Butonu "Save" durumuna getir
+                    }.addOnFailureListener { exception ->
+                        Log.e("Firebase", "Failed to remove music: ${exception.message}", exception)
+                        Toast.makeText(requireContext(), "Failed to remove music", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Hayır") { dialog, _ ->
+                // Kullanıcı "Hayır" derse, diyaloğu kapat
+                dialog.dismiss()
+            }
+            .create()
+
+        alertDialog.show()
+    }
+
+
+
+
+
+
 
     private fun filterNotesByTimestamp(notes: List<NoteInfo>, minTimeDifference: Double): List<NoteInfo> {
         val filteredNotes = mutableListOf<NoteInfo>()
@@ -384,6 +613,32 @@ class PlayFragment : Fragment() {
         )
     }
 
+    private fun checkIfMusicIsSaved(music: Music, callback: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            val userId = currentUser.uid
+            val musicRef = database.getReference("users").child(userId).child("saved_music")
+
+            musicRef.orderByChild("id").equalTo(music.id.toDouble())
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val isSaved = snapshot.exists()
+                        Log.d("PlayFragment", "checkIfMusicIsSaved: Music exists: $isSaved")
+                        callback(isSaved)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("PlayFragment", "Firebase error: ${error.message}", error.toException())
+                        callback(false)
+                    }
+                })
+        } else {
+            Log.e("PlayFragment", "User not logged in")
+            callback(false)
+        }
+    }
+
+
 
     private fun compareAudioFiles(originalMusicPath: String, recordedWavPath: String): List<NoteInfo> {
         val soundAnalysisService = SoundAnalysisService(requireContext())
@@ -468,6 +723,21 @@ class PlayFragment : Fragment() {
 
 */
 
+    private fun updateSaveButtonState(button: Button, isSaved: Boolean) {
+        if (isSaved) {
+            button.text = "Saved"
+            button.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.heart_full, 0, 0, 0
+            )
+        } else {
+            button.text = "Save"
+            button.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.heart_empty, 0, 0, 0
+            )
+        }
+    }
+
+
 
     private fun writeWavHeader(file: File, audioLength: Long, sampleRate: Int, channels: Int, byteRate: Int) {
         val header = ByteArray(44)
@@ -535,6 +805,30 @@ class PlayFragment : Fragment() {
     }
 
 
+    private fun removeMusicFromFirebase(music: Music) {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            val userId = currentUser.uid
+            val musicRef = database.getReference("users").child(userId).child("saved_music")
+
+            // Müzik kaydını eşleşen ID ile bul ve sil
+            musicRef.orderByChild("id").equalTo(music.id.toString()).addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (child in snapshot.children) {
+                        child.ref.removeValue().addOnSuccessListener {
+                            Toast.makeText(requireContext(), "Music removed from saved list", Toast.LENGTH_SHORT).show()
+                        }.addOnFailureListener {
+                            Toast.makeText(requireContext(), "Failed to remove music", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(requireContext(), "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
+    }
 
 
 

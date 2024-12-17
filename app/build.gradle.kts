@@ -75,6 +75,9 @@ dependencies {
     //js analizi için kütüphaneler
     //implementation(files("libs\\TarsosDSPKit-release.aar"))
 
+//firebase databese implementation
+    implementation ("com.google.firebase:firebase-database:21.0.0")
+    implementation ("com.google.firebase:firebase-auth:23.1.0")
 
 
 

@@ -1,10 +1,11 @@
 package com.example.pianosense
 
-data class Music(
-    val id: Int,
-    val title: String,
-    val composer: String,
-    val imageResId: Int,
-    val audioFilePath: String // Yeni özellik
+import java.io.Serializable
 
-)
+data class Music(
+    val id: Int = -1, // Varsayılan değerler ekleniyor
+    val title: String = "",
+    val composer: String = "",
+    val imageResId: Int = 0,
+    val audioFilePath: String = "" // Yeni özellik için varsayılan değer
+) : Serializable
