@@ -29,5 +29,5 @@
             app:argType="string" />
     </fragment>
 
-    <!-- Diğer fragment'leri burada tanımlayabilirsiniz -->
+
 </navigation>

@@ -48,7 +48,8 @@ class CheckResultsFragment : Fragment() {
             val correctNotes = comparisonResults.count { it.isCorrect }
             val accuracy = if (totalNotes > 0) (correctNotes * 100) / totalNotes else 0
 
-            accuracyTextView.text = "$correctNotes/$totalNotes (%$accuracy doğruluk)"
+
+            accuracyTextView.text = "Correct Note:$correctNotes/Total Note:$totalNotes (Accuracy: %$accuracy)"
         }
     }
 }

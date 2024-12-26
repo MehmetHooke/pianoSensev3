@@ -9,6 +9,7 @@ import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Environment
 import android.util.DisplayMetrics
 import android.util.Log
@@ -29,6 +30,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 import java.io.File
@@ -142,11 +145,12 @@ class PlayFragment : Fragment() {
 
         startRecordButton.setOnClickListener {
             if (checkMicrophonePermission()) {
+
                 if (isRecording) {
                     stopRecording()
                     startRecordButton.text = "Start Recording"
                     requireActivity().runOnUiThread {
-                        playMusicButton.setBackgroundResource(R.drawable.rounded_button1)
+                        startRecordButton.setBackgroundResource(R.drawable.rounded_green1)
                     }
 
                     // Mic simgesini geri yükle
@@ -157,19 +161,25 @@ class PlayFragment : Fragment() {
                         0  // Alt taraftaki drawable
                     )
                 } else {
-                    startRecording()
-                    startRecordButton.text = "Stop Recording"
-                    // Pause simgesini göster
-                    requireActivity().runOnUiThread {
-                        playMusicButton.setBackgroundResource(R.drawable.rounded_button_red)
+                    // Geri sayım ekranını göster
+                    val countdownDialog = CountdownDialogFragment {
+                        // Geri sayım tamamlandıktan sonra kayıt başlat
+                        startRecording()
+                        startRecordButton.text = "Stop Recording"
+
+                        requireActivity().runOnUiThread {
+                            startRecordButton.setBackgroundResource(R.drawable.rounded_button_red)
+                        }
+
+                        startRecordButton.setCompoundDrawablesWithIntrinsicBounds(
+                            R.drawable.pause, // Sol taraftaki drawable
+                            0, // Üst taraftaki drawable
+                            0, // Sağ taraftaki drawable
+                            0  // Alt taraftaki drawable
+                        )
                     }
 
-                    startRecordButton.setCompoundDrawablesWithIntrinsicBounds(
-                        R.drawable.pause, // Sol taraftaki drawable
-                        0, // Üst taraftaki drawable
-                        0, // Sağ taraftaki drawable
-                        0  // Alt taraftaki drawable
-                    )
+                    countdownDialog.show(parentFragmentManager, "CountdownDialog")
                 }
             } else {
                 requestMicrophonePermission()
@@ -199,6 +209,8 @@ class PlayFragment : Fragment() {
                             0, // Sağ taraftaki drawable
                             0  // Alt taraftaki drawable
                         )
+                        listenRecordButton.setBackgroundResource(R.drawable.rounded_button_red)
+
                     } else {
                         Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
 
@@ -213,7 +225,7 @@ class PlayFragment : Fragment() {
                         0, // Sağ taraftaki drawable
                         0  // Alt taraftaki drawable
                     )
-
+                    listenRecordButton.setBackgroundResource(R.drawable.rounded_green1)
                 }
 
             } catch (e: IOException) {
@@ -237,7 +249,9 @@ class PlayFragment : Fragment() {
                             R.drawable.ic_play_white, // Sol taraftaki drawable
                             0, 0, 0 // Diğer drawable'lar
                         )
-
+                        requireActivity().runOnUiThread {
+                            playMusicButton.setBackgroundResource(R.drawable.rounded_green1)
+                        }
 
                     } else {
                         // Çalmıyorsa başlat
@@ -263,7 +277,9 @@ class PlayFragment : Fragment() {
                             0, 0, 0 // Diğer drawable'lar
                         )
 
-
+                        requireActivity().runOnUiThread {
+                            playMusicButton.setBackgroundResource(R.drawable.rounded_button_red)
+                        }
 
 
                         // Çalma tamamlandığında durumu sıfırla
@@ -294,63 +310,74 @@ class PlayFragment : Fragment() {
         }
 
 
-
-
-
         resultsButton.setOnClickListener {
+            // ProgressDialogFragment'i oluştur ve işlem tamamlanınca yapılacakları tanımla
+            val progressDialog = ProgressDialogFragment {
+                // 10 saniye tamamlandığında sonuç ekranına geç
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, CheckResultsFragment()) // Sonuç ekranı
+                    .addToBackStack(null)
+                    .commit()
+            }
 
+            // ProgressDialogFragment'i göster
+            progressDialog.show(parentFragmentManager, "ProgressDialog")
 
             try {
-                val assetManager = requireContext().assets
-                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                musicViewModel.selectedMusic.value?.let { selectedMusic ->
+                    val assetFileName = selectedMusic.audioFilePath // Music nesnesindeki dosya adı
+                    val assetManager = requireContext().assets
+                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
-                // Orijinal müzik dosyasını Downloads klasörüne kopyala
-                val originalInputStream = assetManager.open("originalMusic1.wav")
-                val originalWavFile = File(downloadsDir, "tempOriginalMusic.wav")
-                if (!originalWavFile.exists()) {
+                    // Dinamik olarak dosyayı açıyoruz
+                    val originalInputStream = assetManager.open(assetFileName)
+                    val originalWavFile = File(downloadsDir, "tempOriginalMusic.wav")
+
+                    // Eğer geçici dosya varsa sil
+                    if (originalWavFile.exists()) {
+                        originalWavFile.delete()
+                    }
+
+                    // Yeni dosyayı yaz
                     FileOutputStream(originalWavFile).use { outputStream ->
                         originalInputStream.copyTo(outputStream)
                     }
-                }
-                Log.d("PlayFragment", "Orijinal dosya Downloads klasörüne kopyalandı: ${originalWavFile.absolutePath}")
 
+                    Log.i("MusicLoader", "Müzik dosyası başarıyla yüklendi: $assetFileName")
 
-                // Kaydedilen müzik dosyasını tanımla
-                val recordedWavFile = File(downloadsDir, "recording.wav")
-                val tempRecordedWavFile = File(downloadsDir, "tempRecordedMusic.wav")
+                    val recordedWavFile = File(downloadsDir, "recording.wav")
+                    val tempRecordedWavFile = File(downloadsDir, "tempRecordedMusic.wav")
+                    if (recordedWavFile.exists()) {
+                        if (tempRecordedWavFile.exists()) {
+                            tempRecordedWavFile.delete() // Geçici dosyayı sil
+                        }
 
-                if (recordedWavFile.exists()) {
-                    // Yeni dosyayı üzerine yaz
-                    FileOutputStream(tempRecordedWavFile, false).use { outputStream ->
-                        recordedWavFile.inputStream().use { inputStream ->
-                            inputStream.copyTo(outputStream)
+                        // Yeni geçici dosyayı oluştur
+                        FileOutputStream(tempRecordedWavFile).use { outputStream ->
+                            recordedWavFile.inputStream().use { inputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
                         }
                     }
-                    Log.d("FileCopy", "Recorded WAV file copied to temp: ${tempRecordedWavFile.absolutePath}")
-                } else {
-                    Log.e("FileCopy", "Recorded WAV file not found in downloads directory.")
-                }
-                Log.d("PlayFragment", "Kaydedilen dosya Downloads klasörüne kopyalandı: ${recordedWavFile.absolutePath}")
 
-                // PCM dosya yolları
-                val originalPcmFile = File(downloadsDir, "tempOriginalMusic.pcm")
-                val recordedPcmFile = File(downloadsDir, "tempRecordedMusic.pcm")
+                    val originalPcmFile = File(downloadsDir, "tempOriginalMusic.pcm")
 
-                // PCM dönüşümü (orijinal ve kaydedilen WAV dosyaları için)
-                val soundAnalysisService = SoundAnalysisService(requireContext())
-                val originalConverted = soundAnalysisService.convertWavToPcm(originalWavFile.absolutePath, originalPcmFile.absolutePath)
-                val recordedConverted = soundAnalysisService.convertWavToPcm(recordedWavFile.absolutePath, recordedPcmFile.absolutePath)
+                    if (originalPcmFile.exists()){
+                        originalPcmFile.delete()
+                    }
 
+                    val recordedPcmFile = File(downloadsDir, "tempRecordedMusic.pcm")
 
+                    if (recordedPcmFile.exists()){
+                        recordedPcmFile.delete()
+                    }
+                    val soundAnalysisService = SoundAnalysisService(requireContext())
+                    val originalConverted = soundAnalysisService.convertWavToPcm(originalWavFile.absolutePath, originalPcmFile.absolutePath)
+                    val recordedConverted = soundAnalysisService.convertWavToPcm(recordedWavFile.absolutePath, recordedPcmFile.absolutePath)
 
-                if (originalConverted && recordedConverted) {
-                    Log.d("SoundAnalysisService", "PCM donusumleri basarili")
+                    if (originalConverted && recordedConverted) {
+                        val comparisonResults = soundAnalysisService.comparePcmFiles(originalPcmFile.absolutePath, recordedPcmFile.absolutePath)
 
-                    // PCM dosyalarını analiz et
-                    val comparisonResults = soundAnalysisService.comparePcmFiles(originalPcmFile.absolutePath, recordedPcmFile.absolutePath)
-
-                    try {
-                        // comparisonResults zaten ComparisonResult tipi olduğu için doğrudan kullanılabilir
                         val filteredResults = filterNotesByTimestamp(
                             comparisonResults.map { comparisonResult ->
                                 NoteInfo(
@@ -364,27 +391,24 @@ class PlayFragment : Fragment() {
                         )
 
                         musicViewModel.setAnalysisResults(filteredResults)
-                    } catch (e: Exception) {
-                        Log.e("PlayFragment", "Error transforming results", e)
-                        Toast.makeText(requireContext(), "Error processing analysis results", Toast.LENGTH_SHORT).show()
+                    } else {
+                        // UI işlemleri için Main thread'e geçiş
+                        CoroutineScope(Dispatchers.Main).launch {
+                            progressDialog.dismiss()
+                            Toast.makeText(requireContext(), "PCM dönüşümü başarısız oldu", Toast.LENGTH_SHORT).show()
+                        }
                     }
-
-
-
-                    // Sonuçları gösterecek fragment'e geçiş yap
-                    requireActivity().supportFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, CheckResultsFragment())
-                        .addToBackStack(null)
-                        .commit()
-                } else {
-                    Toast.makeText(requireContext(), "PCM dönüşümü başarısız oldu", Toast.LENGTH_SHORT).show()
-                }
+                } ?: Log.e("MusicLoader", "Seçilen müzik nesnesi boş!")
             } catch (e: IOException) {
-                Log.e("PlayFragment", "Error processing asset files", e)
-                Toast.makeText(requireContext(), "Error analyzing audio files", Toast.LENGTH_SHORT).show()
+                // UI işlemleri için Main thread'e geçiş
+                CoroutineScope(Dispatchers.Main).launch {
+                    progressDialog.dismiss()
+                    Log.e("PlayFragment", "Error processing asset files", e)
+                    Toast.makeText(requireContext(), "Error analyzing audio files", Toast.LENGTH_SHORT).show()
+                }
             }
-
         }
+
 
 
     }
@@ -543,13 +567,13 @@ class PlayFragment : Fragment() {
     }
 
     // Stop Recording Logic
-  /*  private fun stopRecording(){
-        audioRecorder.stop()
-        audioRecorder.release()
-        isRecording = false
-        Toast.makeText(requireContext(), "Recording stopped", Toast.LENGTH_SHORT).show()
-    }
-*/
+    /*  private fun stopRecording(){
+          audioRecorder.stop()
+          audioRecorder.release()
+          isRecording = false
+          Toast.makeText(requireContext(), "Recording stopped", Toast.LENGTH_SHORT).show()
+      }
+  */
 
 
     private fun playRecordedAudio(wavFilePath: String) {
@@ -593,6 +617,7 @@ class PlayFragment : Fragment() {
             release() // MediaPlayer'i serbest bırak
         }
         mediaPlayer = null
+
         Toast.makeText(requireContext(), "Playback stopped", Toast.LENGTH_SHORT).show()
     }
 
@@ -680,48 +705,48 @@ class PlayFragment : Fragment() {
     }
 
 
-   /* private fun prepareFFmpegBinary(): String? {
-        val abi = Build.SUPPORTED_ABIS[0] // Cihazın birinci öncelikli mimarisi
-        val ffmpegDir = when (abi) {
-            "x86" -> "ffmpeg/android/jni/FFmpeg/build/x86" // Güncel yol
-            "x86_64" -> "ffmpeg/android/jni/FFmpeg/build/x86_64" // Güncel yol
-            "armeabi-v7a" -> "ffmpeg/android/jni/FFmpeg/build/armeabi-v7a"
-            "arm64-v8a" -> "ffmpeg/android/jni/FFmpeg/build/arm64-v8a"
-            else -> null
-        }
+    /* private fun prepareFFmpegBinary(): String? {
+         val abi = Build.SUPPORTED_ABIS[0] // Cihazın birinci öncelikli mimarisi
+         val ffmpegDir = when (abi) {
+             "x86" -> "ffmpeg/android/jni/FFmpeg/build/x86" // Güncel yol
+             "x86_64" -> "ffmpeg/android/jni/FFmpeg/build/x86_64" // Güncel yol
+             "armeabi-v7a" -> "ffmpeg/android/jni/FFmpeg/build/armeabi-v7a"
+             "arm64-v8a" -> "ffmpeg/android/jni/FFmpeg/build/arm64-v8a"
+             else -> null
+         }
 
-        if (ffmpegDir == null) {
-            Log.e("FFmpeg", "Unsupported ABI: $abi")
-            return null
-        }
+         if (ffmpegDir == null) {
+             Log.e("FFmpeg", "Unsupported ABI: $abi")
+             return null
+         }
 
-        val ffmpegFileName = "ffmpeg" // Binary dosya adı
-        val ffmpegFile = File(requireContext().cacheDir, ffmpegFileName)
+         val ffmpegFileName = "ffmpeg" // Binary dosya adı
+         val ffmpegFile = File(requireContext().cacheDir, ffmpegFileName)
 
-        return try {
-            if (!ffmpegFile.exists()) {
-                requireContext().assets.open("$ffmpegDir/$ffmpegFileName").use { inputStream ->
-                    FileOutputStream(ffmpegFile).use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-                ffmpegFile.setExecutable(true) // Çalıştırılabilir hale getir
-            }
+         return try {
+             if (!ffmpegFile.exists()) {
+                 requireContext().assets.open("$ffmpegDir/$ffmpegFileName").use { inputStream ->
+                     FileOutputStream(ffmpegFile).use { outputStream ->
+                         inputStream.copyTo(outputStream)
+                     }
+                 }
+                 ffmpegFile.setExecutable(true) // Çalıştırılabilir hale getir
+             }
 
-            if (ffmpegFile.exists() && ffmpegFile.canExecute()) {
-                Log.i("FFmpeg", "FFmpeg binary is executable: ${ffmpegFile.absolutePath}")
-            } else {
-                Log.e("FFmpeg", "Failed to make FFmpeg binary executable: ${ffmpegFile.absolutePath}")
-            }
+             if (ffmpegFile.exists() && ffmpegFile.canExecute()) {
+                 Log.i("FFmpeg", "FFmpeg binary is executable: ${ffmpegFile.absolutePath}")
+             } else {
+                 Log.e("FFmpeg", "Failed to make FFmpeg binary executable: ${ffmpegFile.absolutePath}")
+             }
 
-            ffmpegFile.absolutePath
-        } catch (e: IOException) {
-            Log.e("FFmpeg", "Failed to prepare FFmpeg binary", e)
-            null
-        }
-    }
+             ffmpegFile.absolutePath
+         } catch (e: IOException) {
+             Log.e("FFmpeg", "Failed to prepare FFmpeg binary", e)
+             null
+         }
+     }
 
-*/
+ */
 
     private fun updateSaveButtonState(button: Button, isSaved: Boolean) {
         if (isSaved) {

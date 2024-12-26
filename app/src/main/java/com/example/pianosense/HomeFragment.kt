@@ -27,8 +27,8 @@ class HomeFragment : Fragment() {
 
     // Müzik listesi
     val musicList = listOf(
-        Music(1, "Moonlight Sonata", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
-        Music(2, "Türk Marşı ", "Mozart", R.drawable.mozart, "mozartturkishmarch.wav"),
+        Music(1, "Kayıt 1", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
+        Music(2, "Kayıt 2 ", "Mozart", R.drawable.mozart, "originalMusic2.wav"),
         Music(3, "9. Senfoni", "Bethoven", R.drawable.bethoven, "originalMusic1.wav"),
         Music(4, "Divenire", "Ludovico Einaudi", R.drawable.ludovico_einaudi, "originalMusic1.wav"),
         Music(5, "Hit the Road Jack", "Ray Charles", R.drawable.ray_charles, "originalMusic1.wav"),

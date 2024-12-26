@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+
+    android:padding="12dp">
 
     <TextView
         android:id="@+id/resultsTitle"
@@ -25,9 +26,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Doğruluk: -/-"
+        android:padding="10dp"
+        android:background="@drawable/rounded_dialog_background"
         android:textStyle="bold"
-        android:textSize="16sp"
-        android:layout_marginTop="10dp"
+        android:textSize="10sp"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="10dp"
         android:layout_gravity="center_horizontal"
         />
 
