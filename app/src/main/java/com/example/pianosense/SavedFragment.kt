@@ -24,6 +24,8 @@ class SavedFragment : Fragment() {
     // Firebase Auth ve Database referansları
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
     private val database: FirebaseDatabase by lazy { FirebaseDatabase.getInstance() }
+    private var databaseRef: DatabaseReference? = null
+    private var valueEventListener: ValueEventListener? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -51,31 +53,50 @@ class SavedFragment : Fragment() {
         loadSavedMusic() // Her açıldığında verileri güncelle
     }
 
+    override fun onStop() {
+        super.onStop()
+        removeFirebaseListener() // Firebase dinleyicilerini kaldır
+    }
+
     private fun loadSavedMusic() {
         val currentUser = auth.currentUser
         if (currentUser != null) {
             val userId = currentUser.uid
-            val databaseRef = database.getReference("users").child(userId).child("saved_music")
+            databaseRef = database.getReference("users").child(userId).child("saved_music")
 
-            databaseRef.addValueEventListener(object : ValueEventListener {
+            valueEventListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    musicList.clear()
-                    for (child in snapshot.children) {
-                        val music = child.getValue(Music::class.java)
-                        if (music != null) {
-                            musicList.add(music)
+                    if (isAdded) { // Fragment bağlıysa
+                        musicList.clear()
+                        for (child in snapshot.children) {
+                            val music = child.getValue(Music::class.java)
+                            if (music != null) {
+                                musicList.add(music)
+                            }
                         }
+                        savedAdapter.notifyDataSetChanged() // RecyclerView güncelle
                     }
-                    savedAdapter.notifyDataSetChanged() // RecyclerView güncelle
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("Firebase", "Failed to load saved music: ${error.message}", error.toException())
-                    Toast.makeText(requireContext(), "Failed to load saved music", Toast.LENGTH_SHORT).show()
+                    if (isAdded) { // Fragment bağlıysa
+                        Log.e("Firebase", "Failed to load saved music: ${error.message}", error.toException())
+                        Toast.makeText(requireContext(), "Failed to load saved music", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            })
+            }
+            databaseRef?.addValueEventListener(valueEventListener!!)
         } else {
-            Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show()
+            if (isAdded) { // Fragment bağlıysa
+                Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show()
+            }
         }
+    }
+
+    private fun removeFirebaseListener() {
+        valueEventListener?.let {
+            databaseRef?.removeEventListener(it)
+        }
+        valueEventListener = null
     }
 }

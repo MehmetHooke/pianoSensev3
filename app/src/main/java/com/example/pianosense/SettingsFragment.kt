@@ -5,6 +5,7 @@ import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -53,8 +54,6 @@ class SettingsFragment : Fragment() {
         val userNameTextViewDetail = view.findViewById<TextView>(R.id.userNameDetail)
         val userEmailTextViewDetail = view.findViewById<TextView>(R.id.userEmailDetail)
 
-// Kullanıcının UID'sini al
-
 
 // Kullanıcının UID'sini al
         val currentUser = FirebaseAuth.getInstance().currentUser
@@ -86,6 +85,7 @@ class SettingsFragment : Fragment() {
         val logoutButton = view.findViewById<Button>(R.id.logoutButton)
         logoutButton.setOnClickListener {
             auth.signOut()  // Firebase'den çıkış yap
+            Log.d("Auth", "User signed out: ${FirebaseAuth.getInstance().currentUser}")
             // Giriş ekranına yönlendir
             val intent = Intent(requireContext(), LoginActivity::class.java)
             startActivity(intent)

@@ -38,13 +38,12 @@ class LoginFragment : Fragment() {
         auth = FirebaseAuth.getInstance()
 
         val passwordToggle = view.findViewById<ImageView>(R.id.closeİmageView)
-        val forgotPassword= view.findViewById<TextView>(R.id.forgotPasswordText)
+        val forgotPassword = view.findViewById<TextView>(R.id.forgotPasswordText)
         val registerTextView = view.findViewById<TextView>(R.id.registerText)
         val emailEditText = view.findViewById<EditText>(R.id.emailEditText)
         val passwordEditText = view.findViewById<EditText>(R.id.passwordEditText)
         val loginButton = view.findViewById<Button>(R.id.loginButton)
-        val googleSignInButton = view.findViewById<Button>(R.id.googleSignInButton) // Google ile giriş butonu
-
+        val googleSignInButton = view.findViewById<Button>(R.id.googleSignInButton)
 
         passwordToggle.setOnClickListener {
             isPasswordVisible = !isPasswordVisible
@@ -55,12 +54,10 @@ class LoginFragment : Fragment() {
                 passwordEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                 passwordToggle.setImageResource(R.drawable.closedeye)
             }
-            // Cursor pozisyonunun bozulmaması için:
             passwordEditText.setSelection(passwordEditText.text.length)
         }
 
-
-        //şifremi unuttum ekranına geçiş
+        // Şifremi unuttum ekranına geçiş
         forgotPassword.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, ForgotPasswordFragment())
@@ -68,9 +65,9 @@ class LoginFragment : Fragment() {
                 .commit()
         }
 
-        // Google Sign-In seçeneklerini yapılandırın
+        // Google Sign-In seçeneklerini yapılandır
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id)) // Google Developer Console'dan alınan Client ID
+            .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
         googleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
@@ -80,7 +77,6 @@ class LoginFragment : Fragment() {
             signInWithGoogle()
         }
 
-
         // Kayıt ekranına geçiş
         registerTextView.setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -89,7 +85,7 @@ class LoginFragment : Fragment() {
                 .commit()
         }
 
-        // Giriş işlemi
+        // E-posta ve şifre ile giriş
         loginButton.setOnClickListener {
             val email = emailEditText.text.toString().trim()
             val password = passwordEditText.text.toString().trim()
@@ -101,6 +97,7 @@ class LoginFragment : Fragment() {
             }
         }
     }
+
     // Google Sign-In işlemi
     private fun signInWithGoogle() {
         val signInIntent = googleSignInClient.signInIntent
@@ -115,9 +112,9 @@ class LoginFragment : Fragment() {
         }
     }
 
-    private fun handleGoogleSignInResult(task: Task<*>?) {
+    private fun handleGoogleSignInResult(task: Task<*>) {
         try {
-            val account = task?.result as com.google.android.gms.auth.api.signin.GoogleSignInAccount
+            val account = task.result as com.google.android.gms.auth.api.signin.GoogleSignInAccount
             firebaseAuthWithGoogle(account.idToken!!)
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Google Sign-In failed.", Toast.LENGTH_SHORT).show()
@@ -130,17 +127,14 @@ class LoginFragment : Fragment() {
             .addOnCompleteListener(requireActivity()) { task ->
                 if (task.isSuccessful) {
                     Toast.makeText(requireContext(), "Login successful with Google!", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(requireContext(), MainActivity::class.java)
-                    intent.putExtra("SKIP_ONBOARDING", true)
-                    startActivity(intent)
-                    requireActivity().finish()
+                    onLoginSuccess()
                 } else {
                     Toast.makeText(requireContext(), "Google Sign-In failed.", Toast.LENGTH_SHORT).show()
                 }
             }
     }
 
-    // Kullanıcı girişi
+    // E-posta ve şifre ile giriş işlemi
     private fun loginUser(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(requireActivity()) { task ->
@@ -148,10 +142,7 @@ class LoginFragment : Fragment() {
                     val user = auth.currentUser
                     if (user != null && user.isEmailVerified) {
                         Toast.makeText(requireContext(), "Login successful!", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(requireContext(), MainActivity::class.java)
-                        intent.putExtra("SKIP_ONBOARDING", true)
-                        startActivity(intent)
-                        requireActivity().finish()
+                        onLoginSuccess()
                     } else {
                         Toast.makeText(requireContext(), "Please verify your email before logging in.", Toast.LENGTH_SHORT).show()
                     }
@@ -160,6 +151,23 @@ class LoginFragment : Fragment() {
                 }
             }
     }
+
+    /**
+     * Giriş başarılı olduktan sonra çağrılır.
+     * Eğer pendingMusicId varsa, bunu MainActivity'ye aktarıp yönlendirme yapar.
+     */
+    private fun onLoginSuccess() {
+        val pendingMusicId = activity?.intent?.getIntExtra("pendingMusicId", -1) ?: -1
+        val mainIntent = Intent(requireContext(), MainActivity::class.java).apply {
+            putExtra("SKIP_ONBOARDING", true)
+        }
+        if (pendingMusicId != -1) {
+            mainIntent.putExtra("pendingMusicId", pendingMusicId)
+        }
+        startActivity(mainIntent)
+        requireActivity().finish()
+    }
+
     companion object {
         private const val RC_SIGN_IN = 9001
     }

@@ -24,14 +24,14 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:background="@drawable/rounded_background_green"
-        android:layout_marginTop="16dp">
+        android:layout_height="254dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/rounded_background_green">
 
         <ImageView
             android:id="@+id/musicSheetImage"
-            android:layout_width="206dp"
-            android:layout_height="137dp"
+            android:layout_width="231dp"
+            android:layout_height="136dp"
 
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
@@ -39,7 +39,7 @@
             android:layout_marginTop="16dp"
             android:contentDescription="@string/music_mage"
             android:scaleType="centerCrop"
-            android:src="@drawable/adele"
+            android:src="@drawable/bethoven"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.497"
             app:layout_constraintStart_toStartOf="parent"
@@ -52,22 +52,22 @@
             android:layout_below="@id/musicSheetImage"
             android:layout_alignParentStart="true"
             android:layout_marginStart="36dp"
-            android:text="@string/valse_title"
-            android:textSize="14sp"
+            android:text="Kayıt1"
+            android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/musicComposer"
             app:layout_constraintStart_toStartOf="parent" />
 
         <Button
             android:id="@+id/saveButton"
-            android:layout_width="110dp"
-            android:layout_height="50dp"
+            android:layout_width="86dp"
+            android:layout_height="48dp"
             android:layout_below="@+id/musicSheetImage"
 
             android:layout_alignParentEnd="true"
             android:layout_gravity="end"
-            android:layout_marginEnd="28dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginEnd="40dp"
+            android:layout_marginBottom="24dp"
             android:background="@drawable/rounded_green1"
 
             android:drawableStart="@drawable/heart_empty"
@@ -87,8 +87,8 @@
             android:layout_alignParentStart="true"
             android:layout_marginStart="44dp"
             android:layout_marginBottom="24dp"
-            android:text="@string/evgeny_grinko"
-            android:textSize="11sp"
+            android:text="Bethoven"
+            android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
 
@@ -96,8 +96,8 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="370dp"
-        android:layout_height="165dp"
+        android:layout_width="322dp"
+        android:layout_height="149dp"
         android:layout_gravity="center"
         android:layout_marginTop="10dp"
         app:layout_constraintBottom_toTopOf="@+id/resultsButton"
@@ -105,9 +105,9 @@
 
         <Button
             android:id="@+id/playMusicButton"
-            android:layout_width="140dp"
-            android:layout_height="50dp"
-            android:layout_marginStart="36dp"
+            android:layout_width="119dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="20dp"
             android:layout_weight="1"
             android:background="@drawable/rounded_green1"
 
@@ -121,12 +121,12 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.139" />
+            app:layout_constraintVertical_bias="0.253" />
 
         <Button
             android:id="@+id/startRecordButton"
-            android:layout_width="140dp"
-            android:layout_height="50dp"
+            android:layout_width="119dp"
+            android:layout_height="34dp"
             android:layout_weight="1"
             android:background="@drawable/rounded_green1"
             android:drawableStart="@drawable/mic"
@@ -137,15 +137,15 @@
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.203"
+            app:layout_constraintHorizontal_bias="0.633"
             app:layout_constraintStart_toEndOf="@+id/playMusicButton"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.139" />
+            app:layout_constraintVertical_bias="0.253" />
 
         <Button
             android:id="@+id/resultsButton"
-            android:layout_width="140dp"
-            android:layout_height="50dp"
+            android:layout_width="119dp"
+            android:layout_height="34dp"
             android:background="@drawable/rounded_green1"
 
             android:drawableStart="@drawable/ic_search_white"
@@ -158,15 +158,15 @@
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.156"
+            app:layout_constraintHorizontal_bias="0.104"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/playMusicButton"
-            app:layout_constraintVertical_bias="0.408" />
+            app:layout_constraintVertical_bias="0.409" />
 
         <Button
             android:id="@+id/listenRecord"
-            android:layout_width="140dp"
-            android:layout_height="50dp"
+            android:layout_width="119dp"
+            android:layout_height="34dp"
             android:layout_marginTop="20dp"
             android:background="@drawable/rounded_green1"
             android:drawableStart="@drawable/ic_play_white"
@@ -178,10 +178,10 @@
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.218"
+            app:layout_constraintHorizontal_bias="0.634"
             app:layout_constraintStart_toEndOf="@+id/resultsButton"
             app:layout_constraintTop_toBottomOf="@+id/startRecordButton"
-            app:layout_constraintVertical_bias="0.0" />
+            app:layout_constraintVertical_bias="0.031" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
