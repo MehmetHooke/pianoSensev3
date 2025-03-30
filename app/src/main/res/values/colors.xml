@@ -7,6 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="whitebroke">#DED4D4</color>
     <color name="btncolor">#6C63FF</color>
 
     <color name="red">#E91E63</color>
@@ -14,9 +15,9 @@
 
 
     //nav menu
-    <color name="nav_background">#F5EFFA</color> <!-- Arka plan rengi -->
+    <color name="nav_background">#B441A7D3</color> <!-- Arka plan rengi -->
     <color name="nav_selected">#D0C1E3</color> <!-- Seçili arka plan rengi -->
-    <color name="nav_icon_selected">#6D28A6</color> <!-- Seçili simge ve metin rengi -->
-    <color name="nav_icon_unselected">#888888</color> <!-- Seçili olmayan simge ve metin rengi -->
+    <color name="nav_icon_selected">#672585</color> <!-- Seçili simge ve metin rengi -->
+    <color name="nav_icon_unselected">#FFFFFF</color> <!-- Seçili olmayan simge ve metin rengi -->
 
 </resources>

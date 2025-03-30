@@ -10,6 +10,14 @@ import androidx.fragment.app.DialogFragment
 
 class ProgressDialogFragment(private val onTimeout: () -> Unit) : DialogFragment() {
 
+    private val handler = Handler(Looper.getMainLooper())
+    private val timeoutRunnable = Runnable {
+        if (isAdded) {
+            dismiss()
+            onTimeout()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
@@ -19,13 +27,19 @@ class ProgressDialogFragment(private val onTimeout: () -> Unit) : DialogFragment
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        isCancelable = false
+        // Belirli bir süre sonra timeout çalışsın (örneğin 5 saniye)
+        handler.postDelayed(timeoutRunnable, 10000)
+    }
 
-        isCancelable=false
-        // 10 saniye sonra Dialog'u kapat ve onTimeout() işlemini çalıştır
-        Handler(Looper.getMainLooper()).postDelayed({
-            dismiss() // Dialog'u kapat
-            onTimeout() // Sonuç ekranına geçişi tetikle
-        }, 5000) // 5 saniye
+    // İşlem tamamlandığında timeout'u iptal etmek için bu metodu çağırın
+    fun cancelTimeout() {
+        handler.removeCallbacks(timeoutRunnable)
+    }
+
+    override fun onDestroyView() {
+        handler.removeCallbacks(timeoutRunnable)
+        super.onDestroyView()
     }
 
     override fun onStart() {
@@ -34,7 +48,6 @@ class ProgressDialogFragment(private val onTimeout: () -> Unit) : DialogFragment
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        // Dialog'un arka planını şeffaf yap
         dialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
     }
 }

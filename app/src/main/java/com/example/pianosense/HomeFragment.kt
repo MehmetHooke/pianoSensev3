@@ -22,28 +22,6 @@ class HomeFragment : Fragment() {
     private lateinit var musicRecyclerView: RecyclerView
     private lateinit var musicAdapter: MusicAdapter
 
-
-
-
-    // Müzik listesi
-    val musicList = listOf(
-        Music(1, "Kayıt 1", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
-        Music(2, "Kayıt 2 ", "Mozart", R.drawable.mozart, "originalMusic2.wav"),
-        Music(3, "9. Senfoni", "Bethoven", R.drawable.bethoven, "originalMusic1.wav"),
-        Music(4, "Divenire", "Ludovico Einaudi", R.drawable.ludovico_einaudi, "originalMusic1.wav"),
-        Music(5, "Hit the Road Jack", "Ray Charles", R.drawable.ray_charles, "originalMusic1.wav"),
-        Music(6, "Hold the Line", "Toto", R.drawable.toto, "originalMusic1.wav"),
-        Music(7, "Someone Like You", "Adele", R.drawable.adele, "originalMusic1.wav"),
-        Music(8, "Comptine d’un autre été l’après", "Yann Tiersen", R.drawable.yann_tiersen, "originalMusic1.wav"),
-        Music(9, "Parisienne Moonlight", "Anathema", R.drawable.anathema, "originalMusic1.wav"),
-        Music(10, "İmagine", "John Lennon", R.drawable.john_lennon, "originalMusic1.wav"),
-        Music(11, "Brother John", "Anonim", R.drawable.brother_john, "originalMusic1.wav"),
-        Music(12, "Für Elise", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
-        Music(13, "Valse", "Evegny Grinko", R.drawable.evegny_grinko, "originalMusic1.wav")
-
-
-    )
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -54,6 +32,7 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Okuma ve yazma izinleri kontrolü
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -68,13 +47,19 @@ class HomeFragment : Fragment() {
 
         // RecyclerView ve Adapter kurulumu
         musicRecyclerView = view.findViewById(R.id.musicRecyclerView)
-        musicAdapter = MusicAdapter(requireContext(), musicList) { selectedMusic ->
-            // Müzik seçildiğinde ViewModel'e bilgiyi ekle ve PlayFragment'e geçiş yap
+        // Başlangıçta boş liste ile adapter oluşturuluyor.
+        musicAdapter = MusicAdapter(requireContext(), emptyList()) { selectedMusic ->
+            // Müzik seçildiğinde ViewModel'e bilgiyi ekle ve PlayFragment'e yönlendir.
             musicViewModel.setSelectedMusic(selectedMusic)
             (activity as? MainActivity)?.navigateToPlayFragment()
         }
         musicRecyclerView.adapter = musicAdapter
         musicRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        // MusicViewModel içerisindeki müzik listesini gözlemle
+        musicViewModel.musicList.observe(viewLifecycleOwner) { musicList ->
+            // Liste değiştiğinde adapterin listesini güncelle
+            musicAdapter.updateList(musicList)
+        }
     }
 }
-

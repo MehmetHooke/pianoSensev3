@@ -2,6 +2,7 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <solid android:color="#FFFFFF" /> <!-- Arka plan rengi -->
     <corners android:radius="20dp" /> <!-- Yuvarlatılmış köşeler -->
-    <stroke android:width="3dp" android:color="#d3d3d3" /> <!-- Kenar çizgisi (isteğe bağlı) -->
+    <stroke android:width="3dp" android:color="#d3d3d3" />
+     <!-- Kenar çizgisi (isteğe bağlı) -->
 </shape>
 

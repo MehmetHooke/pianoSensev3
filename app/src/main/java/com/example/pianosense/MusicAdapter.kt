@@ -7,22 +7,31 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
 class MusicAdapter(
     private val context: Context,
-    private val musicList: List<Music>,
+    private var musicList: List<Music>,
     private val onItemClick: (Music) -> Unit
 ) : RecyclerView.Adapter<MusicAdapter.MusicViewHolder>() {
 
     inner class MusicViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val titleTextView: TextView = itemView.findViewById(R.id.musicTitle)
-        val composerTextView: TextView = itemView.findViewById(R.id.musicComposer)
-        val imageView: ImageView = itemView.findViewById(R.id.musicImage)
+        private val titleTextView: TextView = itemView.findViewById(R.id.musicTitle)
+        private val composerTextView: TextView = itemView.findViewById(R.id.musicComposer)
+        private val imageView: ImageView = itemView.findViewById(R.id.musicImage)
 
         fun bind(music: Music) {
             titleTextView.text = music.title
             composerTextView.text = music.composer
-            imageView.setImageResource(music.imageResId)
+
+            // Eğer dinamik URL varsa Glide ile yükle, yoksa yerel drawable'ı kullan
+            if (music.coverImageUrl.isNotEmpty()) {
+                Glide.with(context)
+                    .load(music.coverImageUrl)
+                    .into(imageView)
+            } else {
+                imageView.setImageResource(music.imageResId)
+            }
 
             itemView.setOnClickListener {
                 onItemClick(music)
@@ -40,4 +49,10 @@ class MusicAdapter(
     }
 
     override fun getItemCount(): Int = musicList.size
+
+    // Yeni veri geldiğinde adapterin listesini güncellemek için updateList metodu
+    fun updateList(newList: List<Music>) {
+        musicList = newList
+        notifyDataSetChanged()
+    }
 }

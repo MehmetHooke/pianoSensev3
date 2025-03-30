@@ -292,7 +292,7 @@ public class SoundAnalysisService {
                 } else {
                     comparisonResults.add(new ComparisonResult(
                             new NoteInfo(originalNote.getNote(), null, originalNote.getTimestamp(), false),
-                            new NoteInfo(null, "No Match", 0.0, false),
+                            new NoteInfo(null, "Eşleşme Yok", 0.0, false),
                             false
                     ));
                     Log.d("ComparisonCheck", "No match found for original note: " + originalNote.getNote());

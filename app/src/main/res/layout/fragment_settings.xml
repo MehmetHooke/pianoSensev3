@@ -30,6 +30,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
                 android:text="Settings Page"
+                android:textColor="@color/white"
                 android:textAlignment="center"
                 android:textSize="25dp"
                 android:textStyle="bold" />
@@ -44,6 +45,8 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingTop="16dp"
+            android:paddingStart="8dp"
+            android:background="@drawable/neumorphic_button_background"
             android:paddingBottom="16dp">
 
             <ImageView
@@ -65,6 +68,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Name Surname"
+                    android:textColor="@color/white"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -74,7 +78,7 @@
                     android:layout_height="wrap_content"
                     android:text="example@example.com"
                     android:textSize="14sp"
-                    android:textColor="@android:color/darker_gray" />
+                    android:textColor="@color/white" />
             </LinearLayout>
         </LinearLayout>
 
@@ -83,12 +87,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            app:cardElevation="2dp">
-
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="0dp"
+            app:cardUseCompatPadding="true"
+            app:cardPreventCornerOverlap="true"
+            app:cardElevation="0dp"
+            >
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:background="@drawable/neumorphic_button_background"
+                >
 
                 <TextView
                     android:id="@+id/personalInfoHeader"
@@ -96,10 +106,10 @@
                     android:layout_height="wrap_content"
                     android:padding="16dp"
                     android:text="Personal Information"
-                    android:background="?attr/selectableItemBackground"
+                    android:background="@drawable/neumorphic_button_background"
                     android:textSize="16sp"
-                    android:textColor="@color/purple_500"
-                    android:drawableEnd="@drawable/ic_expand_more"
+                    android:textColor="@color/nav_icon_selected"
+                    android:drawableEnd="@drawable/down_arrow"
                     android:gravity="center_vertical" />
 
                 <LinearLayout
@@ -115,8 +125,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Name: John Doe"
+
                         android:textSize="14sp"
-                        android:textColor="@android:color/darker_gray" />
+                        android:textColor="@android:color/white" />
 
                     <TextView
                         android:id="@+id/userEmailDetail"
@@ -125,7 +136,7 @@
                         android:text="Email: example@example.com"
                         android:layout_marginTop="8dp"
                         android:textSize="14sp"
-                        android:textColor="@android:color/darker_gray" />
+                        android:textColor="@android:color/white" />
 
                     <TextView
                         android:id="@+id/register_date"
@@ -134,7 +145,7 @@
                         android:text="Registration Date: 01 Jan 2023"
                         android:layout_marginTop="8dp"
                         android:textSize="14sp"
-                        android:textColor="@android:color/darker_gray" />
+                        android:textColor="@android:color/white" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -144,12 +155,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            app:cardElevation="2dp">
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="0dp"
+            app:cardUseCompatPadding="true"
+            app:cardPreventCornerOverlap="true"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:background="@drawable/neumorphic_button_background">
 
                 <TextView
                     android:id="@+id/privacyHeader"
@@ -157,10 +173,10 @@
                     android:layout_height="wrap_content"
                     android:padding="16dp"
                     android:text="Privacy and Permissions"
-                    android:background="?attr/selectableItemBackground"
+                    android:background="@drawable/neumorphic_button_background"
                     android:textSize="16sp"
-                    android:textColor="@color/purple_500"
-                    android:drawableEnd="@drawable/ic_expand_more"
+                    android:textColor="@color/nav_icon_selected"
+                    android:drawableEnd="@drawable/down_arrow"
                     android:gravity="center_vertical" />
 
                 <LinearLayout
@@ -174,15 +190,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Microphone Access" />
+                        android:text="Microphone Access"
+                        android:textColor="@color/white"/>
 
                     <Button
                         android:id="@+id/requestMicPermissionButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAllCaps="false"
+                        android:padding="8dp"
                         android:text="Request Microphone Permission"
-                        android:backgroundTint="@color/purple_200"
+                        android:backgroundTint="@color/nav_icon_selected"
                         android:background="@drawable/rounded_button"
                         android:textColor="@android:color/white"
                         android:layout_marginTop="8dp" />

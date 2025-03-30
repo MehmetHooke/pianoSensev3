@@ -1,3 +1,4 @@
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -5,6 +6,10 @@ import com.example.pianosense.ComparisonResult
 import com.example.pianosense.Music
 import com.example.pianosense.NoteInfo
 import com.example.pianosense.R
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class MusicViewModel : ViewModel() {
 
@@ -29,7 +34,7 @@ class MusicViewModel : ViewModel() {
 
     init {
         // Varsayılan müzik listesini tanımladım
-
+        fetchDynamicMusic()
         musicList.value = listOf(
             Music(1, "Kayıt 1", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
             Music(2, "Kayıt 2 ", "Mozart", R.drawable.mozart, "originalMusic2.wav"),
@@ -45,13 +50,45 @@ class MusicViewModel : ViewModel() {
             Music(12, "Für Elise", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
             Music(13, "Valse", "Evegny Grinko", R.drawable.evegny_grinko, "originalMusic1.wav")
         )
+
     }
+
+
+    //Dinamik müzikleri muzik listesine eklemek için fonksiyon
+    fun fetchDynamicMusic() {
+        val dbRef = FirebaseDatabase.getInstance().getReference("music_list")
+
+        dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val dynamicMusicList = mutableListOf<Music>()
+                for (child in snapshot.children) {
+                    val music = child.getValue(Music::class.java)
+                    if (music != null) {
+                        dynamicMusicList.add(music)
+                    }
+                }
+                // Statik liste ile dinamik listeyi birleştiriyoruz.
+                val currentList = musicList.value.orEmpty()
+                val updatedList = currentList + dynamicMusicList
+                musicList.value = updatedList
+
+                Log.d("MusicViewModel", "Firebase'den ${dynamicMusicList.size} adet dinamik müzik çekildi.")
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("MusicViewModel", "Firebase'den müzik çekerken hata: ${error.message}")
+            }
+        })
+    }
+
+
+
+
+
 
     // Seçilen müzik için LiveData
     private val _selectedMusic = MutableLiveData<Music>()
     val selectedMusic: LiveData<Music> get() = _selectedMusic
-
-    // Analiz sonuçları için LiveData
 
 
     // Seçilen müziği ayarlamak için fonksiyon

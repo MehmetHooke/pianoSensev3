@@ -1,46 +1,93 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:layout_height="match_parent">
 
-    android:padding="12dp">
-
-    <TextView
-        android:id="@+id/resultsTitle"
+    <!-- 🎆 TAM EKRAN HAVAİ FİŞEK ANİMASYONU -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/motivationAnimation"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Analysis Results"
-        android:background="@drawable/rounded_button"
-        android:textSize="24sp"
-        android:paddingTop="8dp"
-        android:textColor="@color/white"
-        android:textAlignment="center"
-        android:textStyle="bold"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="150dp"
+        android:visibility="gone"
         android:layout_gravity="center"
-        android:layout_marginBottom="-5dp"/>
-
-    <!-- Doğruluk Bilgisi -->
-    <TextView
-        android:id="@+id/accuracyTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Doğruluk: -/-"
-        android:padding="10dp"
-        android:background="@drawable/rounded_dialog_background"
-        android:textStyle="bold"
-        android:textSize="10sp"
-        android:layout_marginTop="15dp"
-        android:layout_marginBottom="10dp"
-        android:layout_gravity="center_horizontal"
-        />
+        app:lottie_fileName="fireworks.json"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="true" />
 
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/resultsRecyclerView"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:padding="1dp"/>
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="12dp">
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/resultsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Analiz Sonucu"
+            android:background="@drawable/rounded_button"
+            android:textSize="24sp"
+            android:paddingTop="8dp"
+            android:textColor="@color/white"
+            android:textAlignment="center"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            android:layout_marginBottom="-5dp" />
+
+        <TextView
+            android:id="@+id/accuracyTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Doğruluk: -/-"
+            android:padding="10dp"
+            android:background="@drawable/rounded_dialog_background"
+            android:textStyle="bold"
+            android:textSize="10sp"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="10dp"
+            android:layout_gravity="center_horizontal" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/resultsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:padding="1dp" />
+    </LinearLayout>
+
+    <!-- MOTİVASYON POPUP KUTUSU (ÖN PLANDA) -->
+    <LinearLayout
+        android:id="@+id/motivationBox"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@drawable/rounded_dialog_background"
+        android:visibility="gone"
+        android:elevation="12dp">
+
+        <TextView
+            android:id="@+id/motivationMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Harika çaldın!"
+            android:textSize="18sp"
+            android:textAlignment="center"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal" />
+
+        <Button
+            android:id="@+id/closeMotivationButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_button"
+            android:backgroundTint="@color/btncolor"
+            android:text="Tamam"
+            android:layout_marginTop="16dp"
+            android:layout_gravity="center_horizontal" />
+    </LinearLayout>
+
+</FrameLayout>

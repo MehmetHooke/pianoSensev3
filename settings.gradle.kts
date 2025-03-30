@@ -24,6 +24,8 @@ dependencyResolutionManagement {
     }
 }
 
+
+
 rootProject.name = "pianosense"
 include(":app")
  

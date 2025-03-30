@@ -25,12 +25,15 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
@@ -38,6 +41,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.RandomAccessFile
+import java.net.URL
 
 
 class PlayFragment : Fragment() {
@@ -100,29 +104,25 @@ class PlayFragment : Fragment() {
 
         musicViewModel.selectedMusic.observe(viewLifecycleOwner) { music ->
             if (music != null) {
-                checkIfMusicIsSaved(music) { isSaved ->
-                    updateSaveButtonState(saveButton, isSaved)
+                // Başlık ve besteci bilgilerini ayarla
+                musicTitleTextView.text = music.title
+                musicComposerTextView.text = music.composer
+
+                // Dinamik görsel varsa Glide ile yükle, yoksa yerel drawable kullan
+                if (music.coverImageUrl.isNotEmpty()) {
+                    // Glide kullanarak resmi yükle
+                    Glide.with(requireContext())
+                        .load(music.coverImageUrl)
+                        .into(musicSheetImageView)
+                } else {
+                    // Yerel drawable (statik müzik) resmi
+                    musicSheetImageView.setImageResource(music.imageResId)
                 }
-            }
-        }
 
+                // Log
+                Log.d("PlayFragment", "Displaying music: ${music.title}, Composer: ${music.composer}")
 
-        musicViewModel.selectedMusic.observe(viewLifecycleOwner) { music ->
-            if (music != null) {
-                musicTitleTextView.text = music.title
-                musicComposerTextView.text = music.composer
-                musicSheetImageView.setImageResource(music.imageResId)
-                Log.d("PlayFragment", "Displaying music: \${music.title}, Composer: \${music.composer}")
-
-            }
-        }
-        musicViewModel.selectedMusic.observe(viewLifecycleOwner) { music ->
-            if (music != null) {
-                musicTitleTextView.text = music.title
-                musicComposerTextView.text = music.composer
-                musicSheetImageView.setImageResource(music.imageResId)
-
-                // Firebase'de müzik olup olmadığını kontrol et ve Save Button'u güncelle
+                // Kayıtlı olup olmadığını kontrol et
                 checkIfMusicIsSaved(music) { isSaved ->
                     updateSaveButtonState(saveButton, isSaved)
                 }
@@ -185,7 +185,15 @@ class PlayFragment : Fragment() {
                 requestMicrophonePermission()
             }
         }
+        //bu kodlar geçmişi görütülenene sayafa geçiş yapılır
 
+        val historyButton = view.findViewById<Button>(R.id.historyButton)
+        historyButton.setOnClickListener {
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, HistoryFragment()) // yeni fragment
+                .addToBackStack(null)
+                .commit()
+        }
 
         listenRecordButton.setOnClickListener {
             try {
@@ -237,146 +245,156 @@ class PlayFragment : Fragment() {
         playMusicButton.setOnClickListener {
             musicViewModel.selectedMusic.value?.let { selectedMusic ->
                 try {
-                    // Assets klasöründen müzik dosyasını alma
-                    val assetFileName = selectedMusic.audioFilePath // Music nesnesindeki dosya adı
-
                     if (isPlayingSong) {
-                        // Zaten oynuyorsa durdur
+                        // Zaten çalıyorsa durdur
                         stopAudioPlayback()
                         isPlayingSong = false
                         playMusicButton.text = "Listen Music"
                         playMusicButton.setCompoundDrawablesWithIntrinsicBounds(
-                            R.drawable.ic_play_white, // Sol taraftaki drawable
-                            0, 0, 0 // Diğer drawable'lar
+                            R.drawable.ic_play_white, 0, 0, 0
                         )
                         requireActivity().runOnUiThread {
                             playMusicButton.setBackgroundResource(R.drawable.rounded_green1)
                         }
-
                     } else {
-                        // Çalmıyorsa başlat
-                        // MediaPlayer serbest bırak ve yeniden başlat
+                        // Yeni MediaPlayer oluştur ve serbest bırakılmışsa yeniden oluştur
                         mediaPlayer?.release()
                         mediaPlayer = MediaPlayer().apply {
-                            val assetFileDescriptor = requireContext().assets.openFd(assetFileName)
-                            setDataSource(
-                                assetFileDescriptor.fileDescriptor,
-                                assetFileDescriptor.startOffset,
-                                assetFileDescriptor.length
-                            )
+                            // Eğer dinamik müzikse (audioFileUrl dolu) URL üzerinden çal
+                            if (selectedMusic.audioFileUrl.isNotEmpty()) {
+                                setDataSource(selectedMusic.audioFileUrl)
+                            } else {
+                                // Aksi halde, assets üzerinden çal (statik müzik)
+                                val assetFileName = selectedMusic.audioFilePath
+                                val assetFileDescriptor = requireContext().assets.openFd(assetFileName)
+                                setDataSource(
+                                    assetFileDescriptor.fileDescriptor,
+                                    assetFileDescriptor.startOffset,
+                                    assetFileDescriptor.length
+                                )
+                            }
                             prepare()
                             start()
                         }
 
-                        // Başlatma durumunu güncelle
+                        // Çalma durumunu güncelle
                         isPlayingSong = true
                         playMusicButton.text = "Stop Listening"
-
                         playMusicButton.setCompoundDrawablesWithIntrinsicBounds(
-                            R.drawable.pause, // Sol taraftaki drawable
-                            0, 0, 0 // Diğer drawable'lar
+                            R.drawable.pause, 0, 0, 0
                         )
-
                         requireActivity().runOnUiThread {
                             playMusicButton.setBackgroundResource(R.drawable.rounded_button_red)
                         }
 
-
-                        // Çalma tamamlandığında durumu sıfırla
+                        // Çalma tamamlandığında buton durumunu sıfırla
                         mediaPlayer?.setOnCompletionListener {
                             isPlayingSong = false
                             playMusicButton.text = "Listen Music"
                             playMusicButton.setCompoundDrawablesWithIntrinsicBounds(
-                                R.drawable.ic_play_white, // Sol taraftaki drawable
-                                0, 0, 0 // Diğer drawable'lar
+                                R.drawable.ic_play_white, 0, 0, 0
                             )
-
-
-
                         }
                     }
                 } catch (e: IOException) {
-                    Log.e("PlayFragment", "Error playing music from assets", e)
-                    Toast.makeText(
-                        requireContext(),
-                        "Error playing selected music",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Log.e("PlayFragment", "Error playing music", e)
+                    Toast.makeText(requireContext(), "Error playing selected music", Toast.LENGTH_SHORT).show()
                 }
             } ?: run {
-                // Eğer seçili müzik yoksa
                 Toast.makeText(requireContext(), "No music selected", Toast.LENGTH_SHORT).show()
             }
         }
 
 
+
         resultsButton.setOnClickListener {
-            // ProgressDialogFragment'i oluştur ve işlem tamamlanınca yapılacakları tanımla
+            // ProgressDialogFragment'i oluşturuyoruz.
             val progressDialog = ProgressDialogFragment {
-                // 10 saniye tamamlandığında sonuç ekranına geç
+                Log.d("PlayFragment", "ProgressDialog callback triggered, navigating to CheckResultsFragment")
                 requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, CheckResultsFragment()) // Sonuç ekranı
+                    .replace(R.id.fragment_container, CheckResultsFragment())
                     .addToBackStack(null)
                     .commit()
             }
-
-            // ProgressDialogFragment'i göster
             progressDialog.show(parentFragmentManager, "ProgressDialog")
+            Log.d("PlayFragment", "ProgressDialog shown")
 
-            try {
-                musicViewModel.selectedMusic.value?.let { selectedMusic ->
-                    val assetFileName = selectedMusic.audioFilePath // Music nesnesindeki dosya adı
-                    val assetManager = requireContext().assets
+            // Coroutine başlatıyoruz.
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val selectedMusic = musicViewModel.selectedMusic.value
+                    if (selectedMusic == null) {
+                        withContext(Dispatchers.Main) {
+                            progressDialog.dismiss()
+                            Toast.makeText(requireContext(), "No music selected", Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
+                    }
+
                     val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    val originalWavFile: File
 
-                    // Dinamik olarak dosyayı açıyoruz
-                    val originalInputStream = assetManager.open(assetFileName)
-                    val originalWavFile = File(downloadsDir, "tempOriginalMusic.wav")
-
-                    // Eğer geçici dosya varsa sil
-                    if (originalWavFile.exists()) {
-                        originalWavFile.delete()
+                    if (selectedMusic.audioFileUrl.isNotEmpty()) {
+                        // Dinamik müzik: URL’den dosyayı indir.
+                        originalWavFile = File(downloadsDir, "tempOriginalMusic.wav")
+                        if (originalWavFile.exists()) originalWavFile.delete()
+                        Log.d("PlayFragment", "Downloading dynamic music from URL: ${selectedMusic.audioFileUrl}")
+                        val success = downloadMusicFile(selectedMusic.audioFileUrl, originalWavFile)
+                        if (!success) {
+                            withContext(Dispatchers.Main) {
+                                progressDialog.dismiss()
+                                Toast.makeText(requireContext(), "Failed to download music file", Toast.LENGTH_SHORT).show()
+                            }
+                            return@launch
+                        }
+                        Log.i("PlayFragment", "Dynamic music downloaded: ${originalWavFile.absolutePath}")
+                    } else {
+                        // Statik müzik: Assets’ten dosyayı kopyala.
+                        val assetFileName = selectedMusic.audioFilePath
+                        val assetManager = requireContext().assets
+                        originalWavFile = File(downloadsDir, "tempOriginalMusic.wav")
+                        if (originalWavFile.exists()) originalWavFile.delete()
+                        FileOutputStream(originalWavFile).use { outputStream ->
+                            assetManager.open(assetFileName).copyTo(outputStream)
+                        }
+                        Log.i("PlayFragment", "Static music loaded from assets: $assetFileName")
                     }
 
-                    // Yeni dosyayı yaz
-                    FileOutputStream(originalWavFile).use { outputStream ->
-                        originalInputStream.copyTo(outputStream)
-                    }
-
-                    Log.i("MusicLoader", "Müzik dosyası başarıyla yüklendi: $assetFileName")
-
+                    // Recorded dosyayı kopyalıyoruz.
                     val recordedWavFile = File(downloadsDir, "recording.wav")
                     val tempRecordedWavFile = File(downloadsDir, "tempRecordedMusic.wav")
                     if (recordedWavFile.exists()) {
-                        if (tempRecordedWavFile.exists()) {
-                            tempRecordedWavFile.delete() // Geçici dosyayı sil
-                        }
-
-                        // Yeni geçici dosyayı oluştur
+                        if (tempRecordedWavFile.exists()) tempRecordedWavFile.delete()
                         FileOutputStream(tempRecordedWavFile).use { outputStream ->
                             recordedWavFile.inputStream().use { inputStream ->
                                 inputStream.copyTo(outputStream)
                             }
                         }
+                    } else {
+                        Log.d("PlayFragment", "Recorded music file not found")
                     }
 
+                    // PCM dosyaları oluşturma.
                     val originalPcmFile = File(downloadsDir, "tempOriginalMusic.pcm")
-
-                    if (originalPcmFile.exists()){
-                        originalPcmFile.delete()
-                    }
-
+                    if (originalPcmFile.exists()) originalPcmFile.delete()
                     val recordedPcmFile = File(downloadsDir, "tempRecordedMusic.pcm")
+                    if (recordedPcmFile.exists()) recordedPcmFile.delete()
 
-                    if (recordedPcmFile.exists()){
-                        recordedPcmFile.delete()
-                    }
                     val soundAnalysisService = SoundAnalysisService(requireContext())
-                    val originalConverted = soundAnalysisService.convertWavToPcm(originalWavFile.absolutePath, originalPcmFile.absolutePath)
-                    val recordedConverted = soundAnalysisService.convertWavToPcm(recordedWavFile.absolutePath, recordedPcmFile.absolutePath)
+                    val originalConverted = soundAnalysisService.convertWavToPcm(
+                        originalWavFile.absolutePath,
+                        originalPcmFile.absolutePath
+                    )
+                    val recordedConverted = soundAnalysisService.convertWavToPcm(
+                        tempRecordedWavFile.absolutePath,
+                        recordedPcmFile.absolutePath
+                    )
 
                     if (originalConverted && recordedConverted) {
-                        val comparisonResults = soundAnalysisService.comparePcmFiles(originalPcmFile.absolutePath, recordedPcmFile.absolutePath)
+                        val comparisonResults = soundAnalysisService.comparePcmFiles(
+                            originalPcmFile.absolutePath,
+                            recordedPcmFile.absolutePath
+                        )
 
                         val filteredResults = filterNotesByTimestamp(
                             comparisonResults.map { comparisonResult ->
@@ -391,25 +409,59 @@ class PlayFragment : Fragment() {
                         )
 
                         musicViewModel.setAnalysisResults(filteredResults)
-                    } else {
-                        // UI işlemleri için Main thread'e geçiş
-                        CoroutineScope(Dispatchers.Main).launch {
-                            progressDialog.dismiss()
-                            Toast.makeText(requireContext(), "PCM dönüşümü başarısız oldu", Toast.LENGTH_SHORT).show()
+                        Log.d("PlayFragment", "Analysis results set in ViewModel")
+
+                        // Firebase'e performans sonucunu kaydet
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid
+                        if (userId != null) {
+                            val resultRef = FirebaseDatabase.getInstance().getReference("users/$userId/result_history").push()
+
+                            val correctCount = filteredResults.count { it.isCorrect }
+                            val wrongCount = filteredResults.size - correctCount
+                            val wrongNotes = filteredResults.filter { !it.isCorrect }
+                                .map { "${it.recordedNote}: ${String.format("%.2f", it.timestamp)} sn" }
+
+                            val dateTime = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+
+                            val historyData = mapOf(
+                                "music_name" to selectedMusic.title,
+                                "music_image_url" to selectedMusic.coverImageUrl,
+                                "date_time" to dateTime,
+                                "correct_notes" to correctCount,
+                                "wrong_notes" to wrongCount,
+                                "wrong_note_list" to wrongNotes
+                            )
+
+                            resultRef.setValue(historyData)
                         }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            progressDialog.dismiss()
+                            Toast.makeText(requireContext(), "PCM conversion failed", Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
                     }
-                } ?: Log.e("MusicLoader", "Seçilen müzik nesnesi boş!")
-            } catch (e: IOException) {
-                // UI işlemleri için Main thread'e geçiş
-                CoroutineScope(Dispatchers.Main).launch {
-                    progressDialog.dismiss()
-                    Log.e("PlayFragment", "Error processing asset files", e)
-                    Toast.makeText(requireContext(), "Error analyzing audio files", Toast.LENGTH_SHORT).show()
+
+                    // Analiz tamamlandıktan sonra progressDialog callback'i çalışsın.
+                    withContext(Dispatchers.Main) {
+                        progressDialog.cancelTimeout() // Timeout'u iptal et
+                        progressDialog.dismiss()       // Dialog'u kapat
+                        requireActivity().supportFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, CheckResultsFragment())
+                            .addToBackStack(null)
+                            .commit()
+                        Log.d("PlayFragment", "Navigated to CheckResultsFragment")
+                    }
+
+                } catch (e: IOException) {
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                        Log.e("PlayFragment", "Error processing files", e)
+                        Toast.makeText(requireContext(), "Error analyzing audio files", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
-
-
 
     }
 
@@ -489,9 +541,24 @@ class PlayFragment : Fragment() {
 
 
 
-
-
-
+    suspend fun downloadMusicFile(urlString: String, destination: File): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val url = java.net.URL(urlString)
+                val connection = url.openConnection()
+                connection.connect()
+                connection.getInputStream().use { input ->
+                    FileOutputStream(destination).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                true
+            } catch (e: Exception) {
+                Log.e("DownloadMusicFile", "Error downloading file: ${e.message}", e)
+                false
+            }
+        }
+    }
 
     private fun filterNotesByTimestamp(notes: List<NoteInfo>, minTimeDifference: Double): List<NoteInfo> {
         val filteredNotes = mutableListOf<NoteInfo>()
@@ -566,16 +633,6 @@ class PlayFragment : Fragment() {
         isRecording = false
     }
 
-    // Stop Recording Logic
-    /*  private fun stopRecording(){
-          audioRecorder.stop()
-          audioRecorder.release()
-          isRecording = false
-          Toast.makeText(requireContext(), "Recording stopped", Toast.LENGTH_SHORT).show()
-      }
-  */
-
-
     private fun playRecordedAudio(wavFilePath: String) {
         try {
             // Önceki MediaPlayer'i serbest bırak
@@ -620,8 +677,6 @@ class PlayFragment : Fragment() {
 
         Toast.makeText(requireContext(), "Playback stopped", Toast.LENGTH_SHORT).show()
     }
-
-
 
     private fun checkMicrophonePermission(): Boolean {
         return ContextCompat.checkSelfPermission(
@@ -704,49 +759,6 @@ class PlayFragment : Fragment() {
         return comparisonList
     }
 
-
-    /* private fun prepareFFmpegBinary(): String? {
-         val abi = Build.SUPPORTED_ABIS[0] // Cihazın birinci öncelikli mimarisi
-         val ffmpegDir = when (abi) {
-             "x86" -> "ffmpeg/android/jni/FFmpeg/build/x86" // Güncel yol
-             "x86_64" -> "ffmpeg/android/jni/FFmpeg/build/x86_64" // Güncel yol
-             "armeabi-v7a" -> "ffmpeg/android/jni/FFmpeg/build/armeabi-v7a"
-             "arm64-v8a" -> "ffmpeg/android/jni/FFmpeg/build/arm64-v8a"
-             else -> null
-         }
-
-         if (ffmpegDir == null) {
-             Log.e("FFmpeg", "Unsupported ABI: $abi")
-             return null
-         }
-
-         val ffmpegFileName = "ffmpeg" // Binary dosya adı
-         val ffmpegFile = File(requireContext().cacheDir, ffmpegFileName)
-
-         return try {
-             if (!ffmpegFile.exists()) {
-                 requireContext().assets.open("$ffmpegDir/$ffmpegFileName").use { inputStream ->
-                     FileOutputStream(ffmpegFile).use { outputStream ->
-                         inputStream.copyTo(outputStream)
-                     }
-                 }
-                 ffmpegFile.setExecutable(true) // Çalıştırılabilir hale getir
-             }
-
-             if (ffmpegFile.exists() && ffmpegFile.canExecute()) {
-                 Log.i("FFmpeg", "FFmpeg binary is executable: ${ffmpegFile.absolutePath}")
-             } else {
-                 Log.e("FFmpeg", "Failed to make FFmpeg binary executable: ${ffmpegFile.absolutePath}")
-             }
-
-             ffmpegFile.absolutePath
-         } catch (e: IOException) {
-             Log.e("FFmpeg", "Failed to prepare FFmpeg binary", e)
-             null
-         }
-     }
-
- */
 
     private fun updateSaveButtonState(button: Button, isSaved: Boolean) {
         if (isSaved) {
@@ -854,52 +866,5 @@ class PlayFragment : Fragment() {
             })
         }
     }
-
-
-
-    ///////
-    /*private fun setMusicImageWidth(imageView: ImageView, imageResId: Int) {
-        // 1. BitmapFactory.Options ayarlarını yap
-        val options = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true // Sadece boyutları al
-        }
-        BitmapFactory.decodeResource(resources, imageResId, options)
-
-        // 2. Ekran boyutunu al
-        val displayMetrics = DisplayMetrics()
-        requireActivity().windowManager.defaultDisplay.getMetrics(displayMetrics)
-        val screenWidth = displayMetrics.widthPixels
-
-        // 3. Ölçekleme oranını hesapla
-        options.inSampleSize = calculateInSampleSize(options, screenWidth)
-        options.inJustDecodeBounds = false // Artık tam boyutlu bitmap oluşturabiliriz
-
-        // 4. Bitmap'i ölçekleyerek yükle
-        val scaledBitmap = BitmapFactory.decodeResource(resources, imageResId, options)
-
-        // 5. ImageView'a scaled bitmap'i yükle
-        imageView.setImageBitmap(scaledBitmap)
-        imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-
-        // 6. Genişlik ayarlarını yap
-        imageView.updateLayoutParams {
-            width = screenWidth
-            height = (options.outHeight * (screenWidth.toFloat() / options.outWidth)).toInt()
-        }
-    }
-
-    // Ölçekleme oranını hesaplayan yardımcı fonksiyon
-    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int): Int {
-        val width = options.outWidth
-        var inSampleSize = 1
-
-        if (width > reqWidth) {
-            val halfWidth = width / 2
-            while ((halfWidth / inSampleSize) >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-        return inSampleSize
-    }*/
 
 }
