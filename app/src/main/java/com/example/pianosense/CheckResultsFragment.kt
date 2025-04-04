@@ -82,7 +82,7 @@ class CheckResultsFragment : Fragment() {
 
             when {
                 accuracy >= 80 -> {
-                    message = "Tebrikler! Harika çaldın 🎉"
+                    message = "Tebrikler! Harika çaldın! 🎉"
                     soundFile = "IyiSes.mp3"
                     motivationAnimation.visibility = View.VISIBLE
                     motivationAnimation.setAnimation("fireworks.json")

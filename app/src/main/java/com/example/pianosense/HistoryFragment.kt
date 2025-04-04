@@ -1,5 +1,6 @@
 package com.example.pianosense
 
+import MusicViewModel
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,9 +12,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import androidx.fragment.app.activityViewModels
 
 class HistoryFragment : Fragment() {
-
+    private val musicViewModel: MusicViewModel by activityViewModels()
     private lateinit var recyclerView: RecyclerView
     private val historyList = mutableListOf<HistoryItem>()
     private lateinit var adapter: HistoryAdapter
@@ -32,10 +34,11 @@ class HistoryFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         recyclerView = view.findViewById(R.id.historyRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = HistoryAdapter(historyList)
+        adapter = HistoryAdapter(historyList, musicViewModel.musicList.value.orEmpty())
         recyclerView.adapter = adapter
         loadHistory()
     }
+
 
     private fun loadHistory() {
         val currentUser = auth.currentUser

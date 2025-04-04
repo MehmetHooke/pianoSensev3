@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <!-- İstediğiniz arka plan rengi veya transparan olabilir -->
+    <solid android:color="@android:color/transparent" />
+    <!-- Köşe yarıçapını dp cinsinden belirtin -->
+    <corners android:radius="80dp" />
+</shape>

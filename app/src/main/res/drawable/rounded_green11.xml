@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- İç kısmı boş tutmak için saydam renk kullanıyoruz -->
+    <solid android:color="@android:color/transparent" />
+    <!-- Kenarlık: 2dp kalınlığında, istediğiniz rengi buraya belirleyin -->
+    <stroke
+        android:width="2dp"
+        android:color="#E705CA2A" />
+    <!-- Yuvarlak köşeler 10dp -->
+    <corners android:radius="10dp" />
+</shape>

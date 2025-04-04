@@ -1,9 +1,12 @@
 package com.example.pianosense
 
 import android.content.Context
+import android.graphics.Outline
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -24,19 +27,37 @@ class MusicAdapter(
             titleTextView.text = music.title
             composerTextView.text = music.composer
 
-            // Eğer dinamik URL varsa Glide ile yükle, yoksa yerel drawable'ı kullan
-            if (music.coverImageUrl.isNotEmpty()) {
-                Glide.with(context)
-                    .load(music.coverImageUrl)
-                    .into(imageView)
+            val imageSource = if (music.coverImageUrl.isNotEmpty()) {
+                music.coverImageUrl
             } else {
-                imageView.setImageResource(music.imageResId)
+                music.imageResId
+            }
+
+            Glide.with(context)
+                .load(imageSource)
+                .centerCrop()
+                .into(imageView)
+
+            // Köşeleri yuvarlatmak için OutlineProvider ekle
+            imageView.post {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    imageView.outlineProvider = object : ViewOutlineProvider() {
+                        override fun getOutline(view: View, outline: Outline) {
+                            // %20 yuvarlatma için view genişliğinin %20'si kadar yarıçap hesaplanıyor.
+                            val radius = (view.width * 0.2f)
+                            outline.setRoundRect(0, 0, view.width, view.height, radius)
+                        }
+                    }
+                    imageView.clipToOutline = true
+                }
             }
 
             itemView.setOnClickListener {
                 onItemClick(music)
             }
         }
+
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MusicViewHolder {

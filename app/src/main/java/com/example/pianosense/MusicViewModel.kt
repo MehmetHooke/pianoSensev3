@@ -41,7 +41,7 @@ class MusicViewModel : ViewModel() {
             Music(3, "9. Senfoni", "Bethoven", R.drawable.bethoven, "originalMusic1.wav"),
             Music(4, "Divenire", "Ludovico Einaudi", R.drawable.ludovico_einaudi, "originalMusic1.wav"),
             Music(5, "Hit the Road Jack", "Ray Charles", R.drawable.ray_charles, "originalMusic1.wav"),
-            Music(6, "Hold the Line", "Toto", R.drawable.toto, "originalMusic1.wav"),
+            Music(6, "Hold the Line", "Toto", R.drawable.mozart, "originalMusic1.wav"),
             Music(7, "Someone Like You", "Adele", R.drawable.adele, "originalMusic1.wav"),
             Music(8, "Comptine d’un autre été l’après", "Yann Tiersen", R.drawable.yann_tiersen, "originalMusic1.wav"),
             Music(9, "Parisienne Moonlight", "Anathema", R.drawable.anathema, "originalMusic1.wav"),

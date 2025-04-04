@@ -4,10 +4,12 @@ import MusicViewModel
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.graphics.Outline
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Environment
@@ -16,6 +18,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -119,6 +122,19 @@ class PlayFragment : Fragment() {
                     musicSheetImageView.setImageResource(music.imageResId)
                 }
 
+                // Köşe yuvarlatma kodu: View'in ölçüleri belirlendikten sonra outlineProvider ataması yapıyoruz.
+                musicSheetImageView.post {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        musicSheetImageView.outlineProvider = object : ViewOutlineProvider() {
+                            override fun getOutline(view: View, outline: Outline) {
+                                // Örneğin %20 yuvarlatma için view genişliğinin %20'si kadar radius
+                                val radius = view.width * 0.10f
+                                outline.setRoundRect(0, 0, view.width, view.height, radius)
+                            }
+                        }
+                        musicSheetImageView.clipToOutline = true
+                    }
+                }
                 // Log
                 Log.d("PlayFragment", "Displaying music: ${music.title}, Composer: ${music.composer}")
 
@@ -150,7 +166,7 @@ class PlayFragment : Fragment() {
                     stopRecording()
                     startRecordButton.text = "Start Recording"
                     requireActivity().runOnUiThread {
-                        startRecordButton.setBackgroundResource(R.drawable.rounded_green1)
+                        startRecordButton.setBackgroundResource(R.drawable.neumorphic_button_background)
                     }
 
                     // Mic simgesini geri yükle
@@ -233,7 +249,7 @@ class PlayFragment : Fragment() {
                         0, // Sağ taraftaki drawable
                         0  // Alt taraftaki drawable
                     )
-                    listenRecordButton.setBackgroundResource(R.drawable.rounded_green1)
+                    listenRecordButton.setBackgroundResource(R.drawable.neumorphic_button_background)
                 }
 
             } catch (e: IOException) {
@@ -254,7 +270,7 @@ class PlayFragment : Fragment() {
                             R.drawable.ic_play_white, 0, 0, 0
                         )
                         requireActivity().runOnUiThread {
-                            playMusicButton.setBackgroundResource(R.drawable.rounded_green1)
+                            playMusicButton.setBackgroundResource(R.drawable.neumorphic_button_background)
                         }
                     } else {
                         // Yeni MediaPlayer oluştur ve serbest bırakılmışsa yeniden oluştur
@@ -416,10 +432,14 @@ class PlayFragment : Fragment() {
                         if (userId != null) {
                             val resultRef = FirebaseDatabase.getInstance().getReference("users/$userId/result_history").push()
 
-                            val correctCount = filteredResults.count { it.isCorrect }
-                            val wrongCount = filteredResults.size - correctCount
+                            val correctNotes = filteredResults.filter { it.isCorrect }
+                                .map { "${it.recordedNote}: ${String.format("%.2f", it.timestamp)} sn" }
+
                             val wrongNotes = filteredResults.filter { !it.isCorrect }
                                 .map { "${it.recordedNote}: ${String.format("%.2f", it.timestamp)} sn" }
+
+                            val correctCount = correctNotes.size
+                            val wrongCount = wrongNotes.size
 
                             val dateTime = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
 
@@ -429,10 +449,12 @@ class PlayFragment : Fragment() {
                                 "date_time" to dateTime,
                                 "correct_notes" to correctCount,
                                 "wrong_notes" to wrongCount,
-                                "wrong_note_list" to wrongNotes
+                                "wrong_note_list" to wrongNotes,
+                                "correct_note_list" to correctNotes  // Yeni alanı ekliyoruz
                             )
 
                             resultRef.setValue(historyData)
+
                         }
                     } else {
                         withContext(Dispatchers.Main) {
