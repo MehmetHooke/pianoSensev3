@@ -13,6 +13,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.LayoutInflater
@@ -45,15 +47,31 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.RandomAccessFile
 import java.net.URL
+import kotlin.math.log
 
 
 class PlayFragment : Fragment() {
+
+//burası metronom için yeni eklendi
+    private var isMetronomeRunning = false
+    private var isFirstCycle = true
+    private var beatCount = 0
+    private var beatLimit = 4
+    private var isRecording = false
+    private lateinit var handler: Handler
+    private lateinit var runnable: Runnable
+    private lateinit var selectedMusic: Music
+    private var beatDurationMs: Long = 600 // BPM'e göre değişecek
+    private lateinit var startRecordButton: Button
+    private var shouldStartRecordingAfterFirstCycle = false
+//burası metronom için yeni eklendi
+
 
     private val musicViewModel: MusicViewModel by activityViewModels()
     private val REQUEST_RECORD_AUDIO_PERMISSION = 200
 
     private lateinit var audioRecorder: AudioRecord
-    private var isRecording = false
+
     private var isPlayingSong = false
     private var isPlayingRecord = true
     private lateinit var audioFilePath: String
@@ -98,8 +116,8 @@ class PlayFragment : Fragment() {
 
         val musicTitleTextView = view.findViewById<TextView>(R.id.musicTitle)
         val musicComposerTextView = view.findViewById<TextView>(R.id.musicComposer)
-        val musicSheetImageView = view.findViewById<ImageView>(R.id.musicSheetImage)
-        val startRecordButton = view.findViewById<Button>(R.id.startRecordButton)
+        //val musicSheetImageView = view.findViewById<ImageView>(R.id.musicSheetImage) artık kullanılmıyor metronom geldi
+        startRecordButton = view.findViewById<Button>(R.id.startRecordButton)
         val listenRecordButton = view.findViewById<Button>(R.id.listenRecord)
         val resultsButton = view.findViewById<Button>(R.id.resultsButton)
         val playMusicButton = view.findViewById<Button>(R.id.playMusicButton)
@@ -112,7 +130,7 @@ class PlayFragment : Fragment() {
                 musicComposerTextView.text = music.composer
 
                 // Dinamik görsel varsa Glide ile yükle, yoksa yerel drawable kullan
-                if (music.coverImageUrl.isNotEmpty()) {
+                /*if (music.coverImageUrl.isNotEmpty()) {
                     // Glide kullanarak resmi yükle
                     Glide.with(requireContext())
                         .load(music.coverImageUrl)
@@ -120,10 +138,10 @@ class PlayFragment : Fragment() {
                 } else {
                     // Yerel drawable (statik müzik) resmi
                     musicSheetImageView.setImageResource(music.imageResId)
-                }
+                }*/
 
                 // Köşe yuvarlatma kodu: View'in ölçüleri belirlendikten sonra outlineProvider ataması yapıyoruz.
-                musicSheetImageView.post {
+                /* musicSheetImageView.post {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         musicSheetImageView.outlineProvider = object : ViewOutlineProvider() {
                             override fun getOutline(view: View, outline: Outline) {
@@ -134,7 +152,7 @@ class PlayFragment : Fragment() {
                         }
                         musicSheetImageView.clipToOutline = true
                     }
-                }
+                } */
                 // Log
                 Log.d("PlayFragment", "Displaying music: ${music.title}, Composer: ${music.composer}")
 
@@ -161,46 +179,21 @@ class PlayFragment : Fragment() {
 
         startRecordButton.setOnClickListener {
             if (checkMicrophonePermission()) {
-
                 if (isRecording) {
                     stopRecording()
-                    startRecordButton.text = "Start Recording"
-                    requireActivity().runOnUiThread {
-                        startRecordButton.setBackgroundResource(R.drawable.neumorphic_button_background)
-                    }
-
-                    // Mic simgesini geri yükle
-                    startRecordButton.setCompoundDrawablesWithIntrinsicBounds(
-                        R.drawable.mic, // Sol taraftaki drawable
-                        0, // Üst taraftaki drawable
-                        0, // Sağ taraftaki drawable
-                        0  // Alt taraftaki drawable
-                    )
+                    updateStartButtonUI(isRecording = false)
                 } else {
-                    // Geri sayım ekranını göster
-                    val countdownDialog = CountdownDialogFragment {
-                        // Geri sayım tamamlandıktan sonra kayıt başlat
-                        startRecording()
-                        startRecordButton.text = "Stop Recording"
-
-                        requireActivity().runOnUiThread {
-                            startRecordButton.setBackgroundResource(R.drawable.rounded_button_red)
-                        }
-
-                        startRecordButton.setCompoundDrawablesWithIntrinsicBounds(
-                            R.drawable.pause, // Sol taraftaki drawable
-                            0, // Üst taraftaki drawable
-                            0, // Sağ taraftaki drawable
-                            0  // Alt taraftaki drawable
-                        )
-                    }
-
-                    countdownDialog.show(parentFragmentManager, "CountdownDialog")
+                    shouldStartRecordingAfterFirstCycle = true
+                    startMetronome()
                 }
             } else {
                 requestMicrophonePermission()
             }
         }
+
+
+
+
         //bu kodlar geçmişi görütülenene sayafa geçiş yapılır
 
         val historyButton = view.findViewById<Button>(R.id.historyButton)
@@ -487,6 +480,21 @@ class PlayFragment : Fragment() {
 
     }
 
+    private fun updateStartButtonUI(isRecording: Boolean) {
+        if (isRecording) {
+            startRecordButton.text = "Stop Recording"
+            startRecordButton.setBackgroundResource(R.drawable.rounded_button_red)
+            startRecordButton.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.pause, 0, 0, 0
+            )
+        } else {
+            startRecordButton.text = "Start Recording"
+            startRecordButton.setBackgroundResource(R.drawable.neumorphic_button_background)
+            startRecordButton.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.mic, 0, 0, 0
+            )
+        }
+    }
 
     override fun onResume() {
         super.onResume()
@@ -653,6 +661,20 @@ class PlayFragment : Fragment() {
 
     private fun stopRecording() {
         isRecording = false
+        stopMetronome()           // Metronomu durdur
+        resetBeatUI()             // Daireleri sıfırla
+
+
+    }
+
+    private fun resetBeatUI() {
+        val circleIds = listOf(R.id.circle1, R.id.circle2, R.id.circle3, R.id.circle4)
+        for (id in circleIds) {
+            val circle = view?.findViewById<View>(id)
+            circle?.setBackgroundResource(R.drawable.metronome_circle_default)
+        }
+
+        view?.findViewById<TextView>(R.id.beatText)?.text = "1"
     }
 
     private fun playRecordedAudio(wavFilePath: String) {
@@ -888,5 +910,100 @@ class PlayFragment : Fragment() {
             })
         }
     }
+
+    //metronom için yeni eklenen fonksiyonlar
+
+    private fun playTickFromAssets() {
+        try {
+            val afd = requireContext().assets.openFd("tick.mp3")
+            val player = MediaPlayer()
+            player.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+            player.prepare()
+            player.setOnCompletionListener { it.release() }
+            player.start()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
+    private fun startMetronome() {
+        isMetronomeRunning = true
+        isFirstCycle = true
+        beatCount = 0
+
+        val music = musicViewModel.selectedMusic.value
+        if (music == null) {
+            Toast.makeText(requireContext(), "Müzik seçilmedi!", Toast.LENGTH_SHORT).show()
+            return
+        }
+        selectedMusic = music
+
+        beatLimit = selectedMusic.metronom.split("/")[0].toInt()
+        beatDurationMs = (60000 / (selectedMusic.bpm.takeIf { it > 0 } ?: 60)).toLong()
+        Log.d("Metronome", "Metronome started with beatLimit: $beatLimit and beatDurationMs: $beatDurationMs")
+        handler = Handler(Looper.getMainLooper())
+        runnable = object : Runnable {
+            override fun run() {
+                if (!isMetronomeRunning) return
+
+                updateBeatUI(beatCount)
+
+                if (isFirstCycle) {
+                    playTickFromAssets()
+                }
+
+                beatCount++
+
+                if (beatCount == beatLimit) {
+                    beatCount = 0
+                    if (isFirstCycle) {
+                        isFirstCycle = false
+
+                        // Şimdi kayıt başlasın
+                        if (shouldStartRecordingAfterFirstCycle) {
+                            startRecording()
+                            updateStartButtonUI(isRecording = true)
+                            shouldStartRecordingAfterFirstCycle = false
+                        }
+                    }
+                }
+
+                handler.postDelayed(this, beatDurationMs)
+            }
+        }
+
+        handler.post(runnable)
+    }
+
+    private fun stopMetronome() {
+        isMetronomeRunning = false
+        handler.removeCallbacks(runnable)
+    }
+
+
+    private fun updateBeatUI(currentBeat: Int) {
+        val circleIds = listOf(R.id.circle1, R.id.circle2, R.id.circle3, R.id.circle4)
+        val beatText = view?.findViewById<TextView>(R.id.beatText)
+
+        for (i in circleIds.indices) {
+            val circle = view?.findViewById<View>(circleIds[i])
+            circle?.setBackgroundResource(
+                if (i == currentBeat) R.drawable.metronome_circle_active
+                else R.drawable.metronome_circle_default
+            )
+        }
+
+        beatText?.text = (currentBeat + 1).toString()
+
+        // TAM O ANDA: kayıt başlat
+        if (!isFirstCycle && shouldStartRecordingAfterFirstCycle) {
+            shouldStartRecordingAfterFirstCycle = false
+            startRecording()
+            updateStartButtonUI(isRecording = true)
+        }
+    }
+
+
 
 }

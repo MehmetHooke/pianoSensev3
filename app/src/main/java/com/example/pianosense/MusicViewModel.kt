@@ -36,19 +36,19 @@ class MusicViewModel : ViewModel() {
         // Varsayılan müzik listesini tanımladım
         fetchDynamicMusic()
         musicList.value = listOf(
-            Music(1, "Kayıt 1", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
-            Music(2, "Kayıt 2 ", "Mozart", R.drawable.mozart, "originalMusic2.wav"),
-            Music(3, "9. Senfoni", "Bethoven", R.drawable.bethoven, "originalMusic1.wav"),
-            Music(4, "Divenire", "Ludovico Einaudi", R.drawable.ludovico_einaudi, "originalMusic1.wav"),
-            Music(5, "Hit the Road Jack", "Ray Charles", R.drawable.ray_charles, "originalMusic1.wav"),
-            Music(6, "Hold the Line", "Toto", R.drawable.mozart, "originalMusic1.wav"),
-            Music(7, "Someone Like You", "Adele", R.drawable.adele, "originalMusic1.wav"),
-            Music(8, "Comptine d’un autre été l’après", "Yann Tiersen", R.drawable.yann_tiersen, "originalMusic1.wav"),
-            Music(9, "Parisienne Moonlight", "Anathema", R.drawable.anathema, "originalMusic1.wav"),
-            Music(10, "İmagine", "John Lennon", R.drawable.john_lennon, "originalMusic1.wav"),
-            Music(11, "Brother John", "Anonim", R.drawable.brother_john, "originalMusic1.wav"),
-            Music(12, "Für Elise", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
-            Music(13, "Valse", "Evegny Grinko", R.drawable.evegny_grinko, "originalMusic1.wav")
+            Music(1, "Kayıt 1", "Beethoven", R.drawable.bethoven, "originalMusic1.wav", bpm=60),
+            Music(2, "Kayıt 2 ", "Mozart", R.drawable.mozart, "originalMusic2.wav",bpm=100),
+            Music(3, "9. Senfoni", "Bethoven", R.drawable.bethoven, "originalMusic1.wav",bpm=120),
+            Music(4, "Divenire", "Ludovico Einaudi", R.drawable.ludovico_einaudi, "originalMusic1.wav",bpm=60),
+            Music(5, "Hit the Road Jack", "Ray Charles", R.drawable.ray_charles, "originalMusic1.wav",bpm=60),
+            Music(6, "Hold the Line", "Toto", R.drawable.mozart, "originalMusic1.wav",bpm=60),
+            Music(7, "Someone Like You", "Adele", R.drawable.adele, "originalMusic1.wav",bpm=60),
+            Music(8, "Comptine d’un autre été l’après", "Yann Tiersen", R.drawable.yann_tiersen, "originalMusic1.wav",bpm=60),
+            Music(9, "Parisienne Moonlight", "Anathema", R.drawable.anathema, "originalMusic1.wav",bpm=60),
+            Music(10, "İmagine", "John Lennon", R.drawable.john_lennon, "originalMusic1.wav",bpm=60),
+            Music(11, "Brother John", "Anonim", R.drawable.brother_john, "originalMusic1.wav",bpm=60),
+            Music(12, "Für Elise", "Beethoven", R.drawable.bethoven, "originalMusic1.wav",bpm=60),
+            Music(13, "Valse", "Evegny Grinko", R.drawable.evegny_grinko, "originalMusic1.wav",bpm=60)
         )
 
     }

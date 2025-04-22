@@ -12,14 +12,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Müzik Ara"
+        android:textColor="@color/white"
         android:textColorHint="@color/white"
         android:paddingStart="10dp"
-
+        android:focusedSearchResultHighlightColor="@color/nav_icon_selected"
         android:paddingBottom="10dp"
         android:layout_marginBottom="15dp"
         android:drawableStart="@drawable/search_icon"
         android:paddingTop="10dp"
-        android:background="@drawable/neumorphic_button_background"/>
+        android:background="@drawable/neumorphic_button_background"
+        android:imeOptions="actionSearch"
+        android:inputType="text" />
+
     <TextView
         android:layout_width="match_parent"
         android:id="@+id/suggestedMusics"

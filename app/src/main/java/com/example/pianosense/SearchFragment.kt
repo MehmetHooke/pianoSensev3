@@ -20,8 +20,8 @@ class SearchFragment : Fragment() {
     private val musicViewModel: MusicViewModel by activityViewModels()
 
     private lateinit var musicAdapter: MusicAdapter
-    private lateinit var musicList: List<Music>
-    private lateinit var filteredList: MutableList<Music>
+    private var musicList: List<Music> = emptyList()
+    private var filteredList: MutableList<Music> = mutableListOf()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -37,37 +37,29 @@ class SearchFragment : Fragment() {
         val searchRecyclerView = view.findViewById<RecyclerView>(R.id.searchRecyclerView)
         val suggestedMusics = view.findViewById<TextView>(R.id.suggestedMusics)
 
-        // Müzik listesi
-        musicList = listOf(
-            Music(1, "Kayıt 1", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
-            Music(2, "Kayıt 2 ", "Mozart", R.drawable.mozart, "originalMusic2.wav"),
-            Music(3, "9. Senfoni", "Bethoven", R.drawable.bethoven, "originalMusic1.wav"),
-            Music(4, "Divenire", "Ludovico Einaudi", R.drawable.ludovico_einaudi, "originalMusic1.wav"),
-            Music(5, "Hit the Road Jack", "Ray Charles", R.drawable.ray_charles, "originalMusic1.wav"),
-            Music(6, "Hold the Line", "Toto", R.drawable.mozart, "originalMusic1.wav"),
-            Music(7, "Someone Like You", "Adele", R.drawable.adele, "originalMusic1.wav"),
-            Music(8, "Comptine d’un autre été l’après", "Yann Tiersen", R.drawable.yann_tiersen, "originalMusic1.wav"),
-            Music(9, "Parisienne Moonlight", "Anathema", R.drawable.anathema, "originalMusic1.wav"),
-            Music(10, "İmagine", "John Lennon", R.drawable.john_lennon, "originalMusic1.wav"),
-            Music(11, "Brother John", "Anonim", R.drawable.brother_john, "originalMusic1.wav"),
-            Music(12, "Für Elise", "Beethoven", R.drawable.bethoven, "originalMusic1.wav"),
-            Music(13, "Valse", "Evegny Grinko", R.drawable.evegny_grinko, "originalMusic1.wav")
-
-
-        )
-        filteredList = musicList.toMutableList()
-
         // RecyclerView ve Adapter kurulumu
         musicAdapter = MusicAdapter(requireContext(), filteredList) { selectedMusic ->
-            // ViewModel'e seçilen müzik bilgisini ekliyoruz
+            // Seçilen müzik bilgisini ViewModel'e aktarıp PlayFragment'e geçiş yapıyoruz.
             musicViewModel.setSelectedMusic(selectedMusic)
-            // PlayFragment'e geçiş yapıyoruz
             (activity as? MainActivity)?.navigateToPlayFragment()
         }
         searchRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         searchRecyclerView.adapter = musicAdapter
 
-        // searchEditText'e odaklandığında önerilen müzikleri gizlemek için listener ekliyoruz
+        // Firebase'den dinamik müzik listesini gözlemleyin
+        musicViewModel.musicList.observe(viewLifecycleOwner) { fetchedMusicList ->
+            musicList = fetchedMusicList
+            // Arama kutusu boş ise yalnızca ilk 4 müzik gösterilsin
+            filteredList.clear()
+            if (musicList.size > 4) {
+                filteredList.addAll(musicList.subList(0, 4))
+            } else {
+                filteredList.addAll(musicList)
+            }
+            musicAdapter.notifyDataSetChanged()
+        }
+
+        // searchEditText odaklandığında önerilen müzikleri gizle/göster
         searchEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus && searchEditText.text.isEmpty()) {
                 suggestedMusics.visibility = View.GONE
@@ -76,7 +68,7 @@ class SearchFragment : Fragment() {
             }
         }
 
-        // Arama çubuğuna TextWatcher ekliyoruz
+        // Arama çubuğuna TextWatcher ekleyin
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
@@ -89,17 +81,23 @@ class SearchFragment : Fragment() {
         })
     }
 
-    // Arama sonuçlarını filtreleme fonksiyonu
+    // Arama sonuçlarını filtreleme fonksiyonu: Hem boş arama hem de arama sonuçları 4 ile sınırlandırılıyor.
     private fun filterMusicList(query: String) {
-        filteredList.clear()
-        if (query.isEmpty()) {
-            filteredList.addAll(musicList)
+        val filtered = if (query.isEmpty()) {
+            // Arama kutusu boşsa ilk 4 öğeyi al
+            if (musicList.size > 4) musicList.subList(0, 4) else musicList
         } else {
             val lowercaseQuery = query.lowercase()
-            filteredList.addAll(musicList.filter {
+            musicList.filter {
                 it.title.lowercase().contains(lowercaseQuery) ||
                         it.composer.lowercase().contains(lowercaseQuery)
-            })
+            }
+        }
+        filteredList.clear()
+        if (filtered.size > 4) {
+            filteredList.addAll(filtered.subList(0, 4))
+        } else {
+            filteredList.addAll(filtered)
         }
         musicAdapter.notifyDataSetChanged()
     }
