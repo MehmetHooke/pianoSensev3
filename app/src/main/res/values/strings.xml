@@ -31,4 +31,5 @@
     <string name="search_icon">Search Music\n</string>
     <string name="status_icon">Status İcon</string>
     <string name="music_mage">Music İmage</string>
+    <string name="title_activity_ogretmen_panel">OgretmenPanelActivity</string>
 </resources>

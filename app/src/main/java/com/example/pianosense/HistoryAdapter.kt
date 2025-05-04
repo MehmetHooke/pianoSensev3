@@ -98,6 +98,31 @@ class HistoryAdapter(
             notifyItemChanged(adapterPosition)
         }
 
+        // Kullanıcının rolünü kontrol et
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            val userId = currentUser.uid
+            val userRef = FirebaseDatabase.getInstance().getReference("users").child(userId).child("rol")
+
+            userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val rol = snapshot.getValue(String::class.java)
+                    if (rol == "ogretmen") {
+                        holder.binButton.visibility = View.GONE
+                    } else {
+                        holder.binButton.visibility = View.VISIBLE
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    holder.binButton.visibility = View.VISIBLE  // hata olursa göster
+                }
+            })
+        } else {
+            holder.binButton.visibility = View.VISIBLE // login olmamışsa yine göster
+        }
+
+
         // Bin butonuna tıklama listener'ı ekliyoruz
         holder.binButton.setOnClickListener {
             androidx.appcompat.app.AlertDialog.Builder(holder.itemView.context)

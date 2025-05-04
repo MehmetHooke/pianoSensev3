@@ -1,6 +1,7 @@
 package com.example.pianosense
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -59,21 +61,65 @@ class SettingsFragment : Fragment() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         val userId = currentUser?.uid
 
+        // Öğretmen paneline geçiş butonu kontrolü
+        val btnOgretmenPanel = view.findViewById<Button>(R.id.btnOgretmenPanel)
+        btnOgretmenPanel.visibility = View.GONE  // Varsayılan olarak görünmesin
+
         if (userId != null) {
             val databaseRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
             databaseRef.get().addOnSuccessListener { snapshot ->
                 val name = snapshot.child("name").getValue(String::class.java)
                 val email = snapshot.child("email").getValue(String::class.java)
+                val rol = snapshot.child("rol").getValue(String::class.java)
 
-                // Kullanıcı adını ve emaili ekrana göster
                 userNameTextView.text = name ?: "Name Surname"
                 userEmailTextView.text = email ?: currentUser.email
                 userEmailTextViewDetail.text = "Mail: ${email ?: currentUser.email}"
                 userNameTextViewDetail.text = "Name: ${name ?: "Name Surname"}"
+
+                if (rol == "ogretmen") {
+                    btnOgretmenPanel.visibility = View.VISIBLE
+                }
+
             }.addOnFailureListener {
                 Toast.makeText(requireContext(), "Failed to load user data", Toast.LENGTH_SHORT).show()
             }
         }
+        btnOgretmenPanel.setOnClickListener {
+            val intent = Intent(requireContext(), OgretmenPanelActivity::class.java)
+            startActivity(intent)
+        }
+        val joinClassButton = view.findViewById<Button>(R.id.joinClassButton)
+
+// Öğrenciler için butonu görünür yap
+        if (userId != null) {
+            val dbRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
+            dbRef.get().addOnSuccessListener { snapshot ->
+                val role = snapshot.child("rol").getValue(String::class.java)
+                if (role != "ogretmen") {
+                    joinClassButton.visibility = View.VISIBLE
+                }
+            }
+        }
+
+// Butona tıklanınca sınıf kodu al ve kontrol et
+        joinClassButton.setOnClickListener {
+            val editText = EditText(requireContext())
+            editText.hint = "Sınıf Kodu Gir"
+
+            AlertDialog.Builder(requireContext())
+                .setTitle("Sınıfa Katıl")
+                .setView(editText)
+                .setPositiveButton("Katıl") { _, _ ->
+                    val classCode = editText.text.toString().trim()
+                    joinClass(userId!!, classCode)
+                }
+                .setNegativeButton("İptal", null)
+                .show()
+        }
+
+
+
 
         val user = auth.currentUser
 
@@ -156,6 +202,40 @@ class SettingsFragment : Fragment() {
                 // İzin reddedilmişse kullanıcıya bilgi verilir
                 Toast.makeText(requireContext(), "Microphone permission denied", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+
+
+    private fun joinClass(userId: String, classCode: String) {
+        val db = FirebaseDatabase.getInstance()
+        val classRef = db.getReference("classes").child(classCode)
+        val userRef = db.getReference("users").child(userId)
+
+        classRef.get().addOnSuccessListener { classSnap ->
+            if (classSnap.exists()) {
+                userRef.get().addOnSuccessListener { userSnap ->
+                    val name = userSnap.child("name").value as? String ?: "Unknown"
+                    val email = userSnap.child("email").value as? String ?: "unknown@example.com"
+
+                    val studentData = mapOf(
+                        "name" to name,
+                        "email" to email
+                    )
+
+                    classRef.child("students").child(userId).setValue(studentData)
+                        .addOnSuccessListener {
+                            Toast.makeText(requireContext(), "Sınıfa başarıyla katıldınız.", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(requireContext(), "Kayıt başarısız: ${it.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
+            } else {
+                Toast.makeText(requireContext(), "Sınıf kodu bulunamadı.", Toast.LENGTH_SHORT).show()
+            }
+        }.addOnFailureListener {
+            Toast.makeText(requireContext(), "Hata: ${it.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

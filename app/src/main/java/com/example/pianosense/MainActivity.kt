@@ -219,4 +219,29 @@ class MainActivity : AppCompatActivity(), OnNextClickListener {
             .commit()
         bottomNavigationView.selectedItemId = R.id.navigation_play
     }
+
+    //rol bilgisi için yeni eklendi
+    private fun checkUserRoleAndNavigate() {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val userId = currentUser.uid
+
+        val databaseRef = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("users").child(userId)
+
+        databaseRef.child("rol").get().addOnSuccessListener { snapshot ->
+            val rol = snapshot.getValue(String::class.java)
+            if (rol == "ogretmen") {
+                // Öğretmen paneline yönlendir
+                val intent = Intent(this, OgretmenPanelActivity::class.java)
+                startActivity(intent)
+                finish()
+            } else {
+                // Öğrenci ise normal akışa devam
+                showMainContent()
+            }
+        }.addOnFailureListener {
+            // Hata olursa yine normal akış
+            showMainContent()
+        }
+    }
+
 }
