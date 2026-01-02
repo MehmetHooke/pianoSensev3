@@ -29,13 +29,16 @@ It allows users to log in, play or upload music, and see real-time analysis resu
 ## 📂 Project Structure
 
 pianosensev3/
+
 │── app/ # Kotlin Android codebase
+
 │── js/ # JavaScript audio analysis logic
+
 │── firebase/ # Firebase integration (Auth, Firestore, RealtimeDB)
+
 │── README.md # Project documentation
 
-yaml
-Kodu kopyala
+
 
 ---
 
